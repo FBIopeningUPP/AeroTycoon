@@ -8,7 +8,8 @@ function App() {
     reputation: 85,
     day: 1,
     isPaused: true,
-    gameSpeed: 1000
+    gameSpeed: 1000,
+    ownedPlanes: []
   });
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -35,10 +36,22 @@ function App() {
   const playNormal = () => setGameState(prev => ({...prev, isPaused: false, gameSpeed: 1000}));
   const playFast = () => setGameState(prev => ({...prev, isPaused: false, gameSpeed: 200}));
 
-  const availablPlanes = [
+  const availablePlanes = [
     { id: 'p1', name: 'Cessna Caravan', price: 2500000, capacity: 14, speed: 340 },
     { id: 'p2', name: 'Boeing 737 Max', price: 90000000, capacity: 200, speed: 840 }
   ];
+
+  const buyPlane = (plane) => {
+    if (gameState.money >= plane.price) {
+      setGameState(prev => ({
+        ...prev,
+        money: prev.money - plane.price,
+        ownedPlanes: [...prev.ownedPlanes, {...plane, instanceId: Date.now()}]
+      }));
+    } else {
+      alert("Not enough funds");
+    }
+  };
 
   return (
     <div className="flex h-screen w-full p-4 gap-4">
@@ -163,15 +176,38 @@ function App() {
 
           {activeTab === 'fleet' && (
             <Card isBlurred className="flex-1 p-8 bg-background/40 border-none shadow-lg overflow-y-auto">
-              <h2 className="text-2xl font-bold mb-6">Aircraft Market</h2>
+              <h2 className="text-xl font-bold mb-4 text-primary">Your Fleet ({gameState.ownedPlanes.length})</h2>
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                {gameState.ownedPlanes.length === 0 ? (
+                  <p className="text-default-500">No planes owned yet.</p>
+                ) : (
+                  gameState.ownedPlanes.map(plane => (
+                    <Card key={plane.instanceId} className="p-4 bg-primary/10 border border-primary/30 flex justify-between items-center flex-row">
+                      <div>
+                        <h3 className="font-semibold">{plane.name}</h3>
+                        <p className="text-xs text-default-400">Status: Idle</p>
+                      </div>
+                      <Plane size={24} className="text-primary opacity-50" />
+                    </Card>
+                    ))
+                )}
+              </div>
+              
+              <Divider className="my-6" />
+
+              <h2 className="text-xl font-bold mb-4">Aircraft Market</h2>
               <div className="grid grid-cols-2 gap-4">
-                {availablPlanes.map(plane => (
+                {availablePlanes.map(plane => (
                   <Card key={plane.id} className="p-4 bg-default-100/10 flex justify-between items-center flex-row">
                     <div>
                       <h3 className="font-semibold text-lg">{plane.name}</h3>
                       <p className="text-sm text-default-500">Cap: {plane.capacity} pax | Spd: {plane.speed} km/h</p>
                     </div>
-                    <Button color="primary" variant="flat">
+                    <Button
+                      color={gameState.money >= plane.price ? "success" : "default"}
+                      variant="flat"
+                      onPress={() => buyPlane(plane)}
+                    >
                       ${(plane.price / 1000000).toFixed(1)}M
                     </Button>
                   </Card>
