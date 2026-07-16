@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Divider } from '@nextui-org/react';
+import { Card, Button, Divider, avatarGroup } from '@nextui-org/react';
 import { Plane, Map, Building2, BarChart3, Settings, Play, Pause, FastForward } from 'lucide-react';
 
 function App() {
@@ -34,6 +34,11 @@ function App() {
   const togglePause = () => setGameState(prev => ({...prev, isPaused: true, gameSpeed: 1000}));
   const playNormal = () => setGameState(prev => ({...prev, isPaused: false, gameSpeed: 1000}));
   const playFast = () => setGameState(prev => ({...prev, isPaused: false, gameSpeed: 200}));
+
+  const availablPlanes = [
+    { id: 'p1', name: 'Cessna Caravan', price: 2500000, capacity: 14, speed: 340 },
+    { id: 'p2', name: 'Boeing 737 Max', price: 90000000, capacity: 200, speed: 840 }
+  ];
 
   return (
     <div className="flex h-screen w-full p-4 gap-4">
@@ -143,16 +148,37 @@ function App() {
             </div>
           </Card>
 
-          <Card
-            isBlurred
-            className="flex-1 flex flex-col items-center justify-cetner bg-background/40 border-none shadow-lg"
-          >
-            <Map size={48} className="text-default-300 mb-4 opacity-50" />
-            <h2 className="text-lg text-default-500 font-medium">Map View goes here</h2>
-            <p className="text-sm text-default-400 mt-2 max-w-sm text-center">
-              this will have route plan and aiport
-            </p>
-          </Card>
+          {activeTab === 'dashboard' && (
+            <Card 
+              isBlurred
+              className="flex-1 flex flex-col items-center justify-center bg-background/40 border-none shadow-lg"
+            >
+              <Map size={48} className="text-default-300 mb-4 opacity-50" />
+              <h2 className="text-lg text-default-500 font-medium">Map View goes here</h2>
+              <p className="text-sm text-default-400 mt-2 max-w-sm text-center">
+                This will have route plan and airport
+              </p>
+            </Card>
+          )}
+
+          {activeTab === 'fleet' && (
+            <Card isBlurred className="flex-1 p-8 bg-background/40 border-none shadow-lg overflow-y-auto">
+              <h2 className="text-2xl font-bold mb-6">Aircraft Market</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {availablPlanes.map(plane => (
+                  <Card key={plane.id} className="p-4 bg-default-100/10 flex justify-between items-center flex-row">
+                    <div>
+                      <h3 className="font-semibold text-lg">{plane.name}</h3>
+                      <p className="text-sm text-default-500">Cap: {plane.capacity} pax | Spd: {plane.speed} km/h</p>
+                    </div>
+                    <Button color="primary" variant="flat">
+                      ${(plane.price / 1000000).toFixed(1)}M
+                    </Button>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
     </div>
   );
