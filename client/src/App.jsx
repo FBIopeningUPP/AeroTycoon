@@ -4,7 +4,7 @@ import { Plane, Map, Building2, BarChart3, Settings, Play, Pause, FastForward } 
 
 function App() {
   const [gameState, setGameState] = useState({
-    money: 1500000,
+    money: 1500000000,
     reputation: 85,
     day: 1,
     isPaused: true,
@@ -25,7 +25,7 @@ function App() {
       timer = setInterval(() => {
         setGameState(prevState => {
           const dailyProfit = prevState.ownedPlanes.reduce((total, plane) => {
-            if (PlaneIcon.assignedRoute) {
+            if (plane.assignedRoute) {
               const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
               return total + (route ? route.baseRevenue : 0);
             }
@@ -64,6 +64,34 @@ function App() {
     } else {
       alert("Not enough funds");
     }
+  };
+
+  const unlockRoute = (routeId, cost) => {
+    if (gameState.money >= cost) {
+      setGameState(prev => ({
+        ...prev,
+        money: prev.money - cost,
+        destinations: prev.destinations.map(d => d.id === routeId ? { ...d, isUnlocked: true} : d)
+      }));
+    } else {
+      alert("not enough funds to unlcok this route!");
+    }
+  };
+
+  const assignPlaneToRoute = (routeId) => {
+    setGameState(prev => {
+      const idlePlaneIndex = prev.ownedPlanes.findIndex(p => !p.assignedRoute);
+
+      if (idlePlaneIndex === -1) {
+        alert("No idle plane avavileble go fleet buy more")
+        return prev;
+      }
+
+      const newPlanes = [...prev.ownedPlanes];
+      newPlanes[idlePlaneIndex] = { ...newPlanes[idlePlaneIndex], assignedRoute: routeId};
+
+      return { ...prev, ownedPlanes: newPlanes};
+    });
   };
 
   return (
@@ -228,6 +256,43 @@ function App() {
               </div>
             </Card>
           )}
+          {activeTab === 'airports' && (
+                <Card isBlurred className="flex-1 p-8 bg-background/40 border-none shadow-lg overflow-y-auto">
+                  <h2 className="text-2xl font-bold mb-6">Global Routes</h2>
+
+                  <div className="flex flex-col gap-4">
+                    {gameState.destinations.map(dest => {
+                      const activePlanes = gameState.ownedPlanes.filter(p => p.assignedRoute === dest.id).length;
+
+                      return (
+                        <Card key={dest.id} className="p-4 bg-default-100/10 border border-default-200/20 flex flex-row justify-between items-center">
+                          <div>
+                            <h3 className="font-semibold text-lg flex items-center gap-2">
+                              {dest.name}
+                              {dest.isUnlocked ? <span className="text-xs bg-success/20 text-success px-2 py-1 rounded">Unlocked</span> : <span className="text-xs bg-danger/20 text-danger px-2 py-1 rounded">Locked</span>}
+                            </h3>
+                            <p className="text-sm text-default-500">
+                              {dest.isUnlocked
+                                ? `Generating: $${dest.baseRevenue}/day per plane | Active Planes: ${activePlanes}`
+                                : `Unlock Cost: $${(dest.cost / 1000000).toFixed(1)}M`}
+                            </p>
+                          </div>
+
+                          {dest.isUnlocked ? (
+                            <Button color="primary" variant="flat" onPress={() => assignPlaneToRoute(dest.id)}>
+                              Assign Idle Plane
+                            </Button>
+                          ) : (
+                            <Button color="warning" variant="flat" onPress={() => unlockRoute(dest.id, dest.cost)}>
+                              Unlock Route
+                            </Button>
+                          )}
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </Card>
+              )}
         </div>
     </div>
   );
