@@ -124,14 +124,14 @@ function App() {
           <NavButton 
             icon={<Plane size={18} />}
             label="Airports"
-            isActive={activeTab === 'Airports'}
-            onPress={() => setActiveTab('Airports')}
+            isActive={activeTab === 'airports'}
+            onPress={() => setActiveTab('airports')}
           />
           <NavButton 
             icon={<Plane size={18} />}
             label="Finances"
-            isActive={activeTab === 'Finances'}
-            onPress={() => setActiveTab('Finances')}
+            isActive={activeTab === 'finances'}
+            onPress={() => setActiveTab('finances')}
           />
         </div>
 
