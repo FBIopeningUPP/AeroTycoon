@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(176, 38, 255, 0.08), transparent 40%),
+    radial-gradient(circle at 85% 30%, rgba(0, 240, 255, 0.08), transparent 40%);
+}
