@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Divider } from '@nextui-org/react';
 import { Plane, Map, Building2, BarChart3, Settings, Play, Pause, FastForward } from 'lucide-react';
 
@@ -7,10 +7,33 @@ function App() {
     money: 1500000,
     reputation: 85,
     day: 1,
-    isPaused: true
+    isPaused: true,
+    gameSpeed: 1000
   });
 
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  useEffect(() => {
+    let timer;
+    if (!gameState.isPaused) {
+      timer = setInterval(() => {
+        setGameState(prevState => {
+          const dailyProfit = 5000;
+
+          return {
+            ...prevState,
+            day: prevState.day + 1,
+            money: prevState.money + dailyProfit
+          };
+        });
+      }, gameState.gameSpeed);
+    }
+    return () => clearInterval(timer);
+  }, [gameState.isPaused, gameState.gameSpeed]);
+
+  const togglePause = () => setGameState(prev => ({...prev, isPaused: true, gameSpeed: 1000}));
+  const playNormal = () => setGameState(prev => ({...prev, isPaused: false, gameSpeed: 1000}));
+  const playFast = () => setGameState(prev => ({...prev, isPaused: false, gameSpeed: 200}));
 
   return (
     <div className="flex h-screen w-full p-4 gap-4">
@@ -31,25 +54,25 @@ function App() {
             icon={<Map size={18} />}
             label="Dashboard"
             isActive={activeTab === 'dashboard'}
-            onClick={() => setActiveTab('dashboard')}
+            onPress={() => setActiveTab('dashboard')}
           />
           <NavButton 
             icon={<Plane size={18} />}
             label="Fleet"
             isActive={activeTab === 'fleet'}
-            onClick={() => setActiveTab('fleet')}
+            onPress={() => setActiveTab('fleet')}
           />
           <NavButton 
             icon={<Plane size={18} />}
             label="Airports"
             isActive={activeTab === 'Airports'}
-            onClick={() => setActiveTab('Airports')}
+            onPress={() => setActiveTab('Airports')}
           />
           <NavButton 
             icon={<Plane size={18} />}
             label="Finances"
             isActive={activeTab === 'Finances'}
-            onClick={() => setActiveTab('Finances')}
+            onPress={() => setActiveTab('Finances')}
           />
         </div>
 
@@ -60,10 +83,10 @@ function App() {
             icon={<Settings size={18} />}
             label="Settings"
             isActive={activeTab === 'settings'}
-            onClick={() => setActiveTab('settings')}
+            onPress={() => setActiveTab('settings')}
           />
         </div>
-
+        </Card>
         <div className="flex flex-col flex-1 gap-4">
           <Card
             isBlurred
@@ -86,17 +109,34 @@ function App() {
             <div className="flex items-center gap-6">
               <div className="text-right">
                 <p className="text-sm font-semibold">Day {gameState.day}</p>
-                <p className="text-xs text-default 500">Standard Time</p>
+                <p className="text-xs text-default-500">
+                  {gameState.isPaused ? 'PAUSED' : gameState.gameSpeed === 1000 ? 'NORMAL SPEED' : 'FAST FORWARD'}
+                </p>
               </div>
 
               <div className="flex items-center gap-2 bg-default-100/20 p-1 rounded-lg">
-                <Button isIconOnly variant="light" size="sm" radius="md">
+                <Button
+                  isIconOnly
+                  variant={gameState.isPaused ? "flat" : "light"}
+                  color={gameState.isPaused ? "warning" : "default"}
+                  size="sm" radius="md" onPress={togglePause}
+                >
                   <Pause size={16} />
                 </Button>
-                <Button isIconOnly variant="flat" color="primary" size="sm" radius="md">
+                <Button
+                  isIconOnly
+                  variant={!gameState.isPaused && gameState.gameSpeed === 1000 ? "flat" : "light"}
+                  color={!gameState.isPaused && gameState.gameSpeed === 1000 ? "primary" : "default"}
+                  size="sm" radius="md" onPress={playNormal}
+                >
                   <Play size={16} />
                 </Button>
-                <Button isIconOnly variant="light" size="sm" radius="md">
+                <Button
+                  isIconOnly
+                  variant={!gameState.isPaused && gameState.gameSpeed === 1000 ? "flat" : "light"}
+                  color={!gameState.isPaused && gameState.gameSpeed === 1000 ? "primary" : "default"}
+                  size="sm" radius="md" onPress={playFast}
+                >
                   <FastForward size={16} />
                 </Button>
               </div>
@@ -114,18 +154,17 @@ function App() {
             </p>
           </Card>
         </div>
-      </Card>
     </div>
   );
 }
-function NavButton({icon, label, isActive, onClick}) {
+function NavButton({icon, label, isActive, onPress}) {
   return (
     <Button
       variant={isActive ? "flat" : "light"}
       color={isActive ? "primary" : "default"}
       className={`justify-start px-4 py-6 ${isActive ? "font-semibold" : "font-normal"}`}
       fullWidth
-      onClick={onClick}
+      onPress={onPress}
     >
       {icon}
       <span className="ml-2">{label}</span>
