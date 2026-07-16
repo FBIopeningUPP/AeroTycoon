@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Divider, avatarGroup } from '@nextui-org/react';
-import { Plane, Map, Building2, BarChart3, Settings, Play, Pause, FastForward } from 'lucide-react';
+import { Plane, Map, Building2, BarChart3, Settings, Play, Pause, FastForward, BadgeAlert } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import Globe from 'react-globe.gl';
 
 function App() {
   const [gameState, setGameState] = useState({
@@ -10,6 +12,7 @@ function App() {
     isPaused: true,
     gameSpeed: 1000,
     ownedPlanes: [],
+    history: [],
     destinations: [
       { id: 'd1', name: 'New York (Hub)', cost: 0, isUnlocked: true, baseRevenue: 2000 },
       { id: 'd2', name: 'London', cost: 3000000, isUnlocked: false, baseRevenue: 8000 },
@@ -37,7 +40,11 @@ function App() {
           return {
             ...prevState,
             day: prevState.day + 1,
-            money: prevState.money + dailyProfit - operatingCosts
+            money: prevState.money + dailyProfit - operatingCosts,
+            history: [...prevState.history, {
+              day: `Day ${prevState.day}`,
+              balance: prevState.money
+            }].slice(-30)
           };
         });
       }, gameState.gameSpeed);
@@ -53,6 +60,20 @@ function App() {
     { id: 'p1', name: 'Cessna Caravan', price: 2500000, capacity: 14, speed: 340 },
     { id: 'p2', name: 'Boeing 737 Max', price: 90000000, capacity: 200, speed: 840 }
   ];
+
+  const NY = {lat: 40.71, lng: -74.00};
+  const LON = { lat: 51.50, lng: -0.12 };
+  const TOK = { lat: 35.67, lng: 139.65 };
+
+  const globeCities = [
+    { name: 'New York', ...NY, size: 1.5, color: '#00f0ff' },
+    { name: 'London', ...LON, size: 1, color: gameState.destinations[1].isUnlocked ? '#b026ff' : '#555' },
+    { name: 'Tokyo', ...TOK, size: 1, color: gameState.destinations[2].isUnlocked ? '#b026ff' : '#555' }
+  ];
+
+  const globeRoutes = [];
+  if (gameState.destinations[1].isUnlocked) globeRoutes.push({ startLat: NY.lat, startLng: NY.lng, endLat: LON.lat, endLng: LON.lng });
+  if (gameState.destinations[2].isUnlocked) globeRoutes.push({ startLat: NY.lat, startLng: NY.lng, endLat: TOK.lat, endLng: TOK.lng });
 
   const buyPlane = (plane) => {
     if (gameState.money >= plane.price) {
@@ -203,17 +224,38 @@ function App() {
           </Card>
 
           {activeTab === 'dashboard' && (
-            <Card 
-              isBlurred
-              className="flex-1 flex flex-col items-center justify-center bg-background/40 border-none shadow-lg"
-            >
-              <Map size={48} className="text-default-300 mb-4 opacity-50" />
-              <h2 className="text-lg text-default-500 font-medium">Map View goes here</h2>
-              <p className="text-sm text-default-400 mt-2 max-w-sm text-center">
-                This will have route plan and airport
-              </p>
-            </Card>
-          )}
+                <Card isBlurred className="flex-1 overflow-hidden bg-background/40 border-none shadow-lg relative">
+                  <div className="absolute top-4 left-4 z-10 pointer-events-none">
+                    <h2 className="text-2xl font-bold text-primary drop-shadow-md">Global Command</h2>
+                    <p className="text-default-400">Drag to rotate • Scroll to zoom</p>
+                  </div>
+
+                  <div className="w-full h-full cursor-move flex items-center justify-center pt-8">
+                    <Globe
+                      width={800}
+                      height={600}
+                      backgroundColor="rgba(0,0,0,0)" 
+                      globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
+
+                      labelsData={globeCities}
+                      labelLat={d => d.lat}
+                      labelLng={d => d.lng}
+                      labelText={d => d.name}
+                      labelSize={d => d.size}
+                      labelDotRadius={d => d.size}
+                      labelColor={d => d.color}
+                      labelResolution={2}
+
+                      arcsData={globeRoutes}
+                      arcColor={() => '#00f0ff'}
+                      arcDashLength={0.4}
+                      arcDashGap={0.2}
+                      arcDashAnimateTime={1500}
+                      arcStroke={1.5}
+                    />
+                  </div>
+                </Card>
+              )}
 
           {activeTab === 'fleet' && (
             <Card isBlurred className="flex-1 p-8 bg-background/40 border-none shadow-lg overflow-y-auto">
@@ -290,6 +332,39 @@ function App() {
                         </Card>
                       );
                     })}
+                  </div>
+                </Card>
+              )}
+          {activeTab === 'finances' && (
+                <Card isBlurred className="flex-1 p-8 bg-background/40 border-none shadow-lg flex flex-col">
+                  <h2 className="text-2xl font-bold mb-2">Financial Overview</h2>
+                  <p className="text-sm text-default-500 mb-8">30-Day Balance History</p>
+
+                  <div className="flex-1 w-full min-h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={gameState.history}>
+                        <XAxis dataKey="day" stroke="#8b95a5" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis
+                          stroke="#8b95a5"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`}
+                        />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: 'rgba(13, 17, 33, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                          itemStyle={{ color: '#00f0ff' }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="balance"
+                          stroke="#00f0ff"
+                          strokeWidth={3}
+                          dot={false}
+                          activeDot={{ r: 8, fill: '#b026ff' }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
                 </Card>
               )}
