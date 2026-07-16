@@ -9,7 +9,12 @@ function App() {
     day: 1,
     isPaused: true,
     gameSpeed: 1000,
-    ownedPlanes: []
+    ownedPlanes: [],
+    destinations: [
+      { id: 'd1', name: 'New York (Hub)', cost: 0, isUnlocked: true, baseRevenue: 2000 },
+      { id: 'd2', name: 'London', cost: 3000000, isUnlocked: false, baseRevenue: 8000 },
+      { id: 'd3', name: 'Tokyo', cost: 8000000, isUnlocked: false, baseRevenue: 15000 }
+    ]
   });
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -19,12 +24,20 @@ function App() {
     if (!gameState.isPaused) {
       timer = setInterval(() => {
         setGameState(prevState => {
-          const dailyProfit = 5000;
+          const dailyProfit = prevState.ownedPlanes.reduce((total, plane) => {
+            if (PlaneIcon.assignedRoute) {
+              const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
+              return total + (route ? route.baseRevenue : 0);
+            }
+            return total;
+          }, 0);
+
+          const operatingCosts = prevState.ownedPlanes.length * 500;
 
           return {
             ...prevState,
             day: prevState.day + 1,
-            money: prevState.money + dailyProfit
+            money: prevState.money + dailyProfit - operatingCosts
           };
         });
       }, gameState.gameSpeed);
