@@ -295,7 +295,7 @@ function App() {
       setGameState(prev => ({
         ...prev,
         money: prev.money - cost,
-        reasearch: { ...(prev.research || {}), [tech]: true }
+        research: { ...(prev.research || {}), [tech]: true }
       }));
     } else {
       alert("not enough fund or already reaseached")
