@@ -15,6 +15,8 @@ function App() {
     return {
       money: 15000000,
       debt: 0,
+      marketingActive: 0,
+      mechanics: 0,
       reputation: 85,
       ticketPrice: 1.0,
       day: 1,
@@ -62,13 +64,19 @@ function App() {
             newEventDays = newEvent.duration;
           }
 
-          let newReputation = prevState.reputation;
-          if (prevState.ticketPrice > 1.2) {
-            newReputation -= (prevState.ticketPrice - 1.0) * 0.5;
-          } else if (prevState.ticketPrice < 1.0) {
-            newReputation += (1.0 - prevState.ticketPrice);
-          } else if (newReputation < 85) {
-            newReputation += 0.2;
+          let newReputation = prevState.reputationl
+          let newMarketing = Math.max(0, (prevState.marketingActive || 0) -1);
+
+          if (newMarketing > 0) {
+            newReputation = 100;
+          } else {
+            if (prevState.ticketPrice > 1.2) {
+              newReputation -= (prevState.ticketPrice - 1.0) * 0.5;
+            } else if (prevState.ticketPrice < 1.0) {
+              newReputation += (1.0 - prevState.ticketPrice);
+            } else if (newReputation < 85) {
+              newReputation += 0.2;
+            }
           }
 
           newReputation = Math.max(0, Math.min(100, newReputation));
@@ -76,14 +84,16 @@ function App() {
           let dailyProfit = 0;
           let maintenanceFines = 0;
 
+          const conditionDecay = Math.max(0.2, 1.0 - ((prevState.mechanics || 0) * 0.1));
+
           const updatedPlanes = prevState.ownedPlanes.map(plane => {
             if (!plane.assignedRoute) return plane;
 
-            const newCondition = plane.condition - 1;
+            const newCondition = plane.condition - conditionDecay;
 
-            if (newCondition <= 0) {
+            if(newCondition <= 0) {
               maintenanceFines += 10000000;
-              return { ...plane, condition: 0, assignedRoute: null};
+              return { ... plane, condition: 0, assignedRoute: null};
             }
 
             const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
@@ -93,17 +103,19 @@ function App() {
             revenue = revenue * prevState.ticketPrice * (newReputation / 100);
 
             dailyProfit += revenue;
-            return { ...plane, condition: newCondition };
+            return { ...plane, condition: newCondition};
           });
 
           let dailyInterest = (prevState.debt || 0) * 0.02;
-          let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest;
+          let mechanicSalaries = (prevState.mechanics || 0) * 1000;
+          let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries;
           if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
 
           return {
             ...prevState,
             day: prevState.day + 1,
             reputation: newReputation,
+            marketingActive: newMarketing,
             ownedPlanes: updatedPlanes,
             money: Math.max(0, prevState.money + dailyProfit - operatingCosts - maintenanceFines),
             activeEvent: newEvent,
@@ -215,6 +227,31 @@ function App() {
       }));
     } else {
       alert("pay ur loan")
+    }
+  };
+
+  const buyMarketing = () => {
+    const cost = 500000;
+    if (gameState.money >= cost) {
+      setGameState(prev => ({
+        ...prev,
+        money: prev.money-cost,
+        marketingActive: 14
+      }));
+    } else {
+      alert("not enough fundd for mraketing camaping")
+    }
+  };
+
+  const hireMechanic = () => {
+    if (gameState.money >= 50000) {
+      setGameState(prev => ({
+        ...prev,
+        money: prev.money - 50000,
+        mechanics: (prev.mechanics || 0) + 1
+      }));
+    } else {
+      alert("not enough monay to gat machanaac")
     }
   };
 
@@ -346,12 +383,30 @@ function App() {
 
         {activeTab === 'dashboard' && (
           <Card isBlurred className="flex-1 overflow-hidden bg-background/40 border-none shadow-lg relative">
-            <div className="absolute top-4 left-4 z-10 pointer-events-none">
+            <div className="absolute top-4 left-4 z-20 pointer-events-none">
               <h2 className="text-2xl font-bold text-primary drop-shadow-md">Global Command</h2>
-              <p className="text-default-400">Drag to rotate • Scroll to zoom</p>
+              <p className="text-default-400">Drag to rotate scroll to zoom</p>
             </div>
 
-            <div className="w-full h-full cursor-move flex items-center justify-center pt-8">
+            <div className="absolute bottom-6 left-6 z-20 flex gap-4 pointer-events-none">
+              <Card className="p-4 bg-background/80 backdrop-blue-md border border-default-200/50 w-64 shadow-lg pointer-events-auto">
+                <h3 className="font-bold text-lg mb-2">Marketing Dept</h3>
+                <p className="text-xs text-default-400 mb-4">Super Bowl Ad: Max Rep for 14 days.</p>
+                {gameState.marketingActive > 0 ? (
+                  <Button color="success" variant="flat" fullWidth isDisabled>Active ({gameState.marketingActive} days)</Button>
+                ) : (
+                  <Button color="primary" variant="shadow" fullWidth onPress={buyMarketing}>Run ad</Button>
+                )}  
+              </Card>
+
+              <Card className="p-4 bg-background/80 backdrop-blur-md border border-default-200/50 w-64 shadow-lg pointer-events-auto">
+                <h3 className="font-bold text-lg mb-2 flex justify-between">HR Dept <span className="text-primary">{gameState.mechanics || 0} Hired</span></h3>
+                <p className="text-xs text-default-400 mb-4">Mechanics slow plane dmanage. $1k/day salary.</p>
+                <Button color="warning" variant="shadow" fullWidth onPress={hireMechanic}>Hire Mechanic($50k)</Button>
+              </Card>
+            </div>
+
+            <div className="w-full h-full cursor-move flex items-center justify-center pt-8 z-10 absolute inset-0">
               <Globe
                 width={800}
                 height={600}
@@ -359,7 +414,7 @@ function App() {
                 globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
                 bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
                 showAtmosphere={true}
-                atmosphereColor="#3a228a" 
+                atmosphereColor="#3a228a"
                 atmosphereAltitude={0.15}
                 labelsData={globeCities}
                 labelLat={d => d.lat}
