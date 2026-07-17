@@ -13,7 +13,8 @@ function App() {
     }
 
     return {
-      money: 15000000, 
+      money: 15000000,
+      debt: 0,
       reputation: 85,
       ticketPrice: 1.0,
       day: 1,
@@ -76,12 +77,12 @@ function App() {
           let maintenanceFines = 0;
 
           const updatedPlanes = prevState.ownedPlanes.map(plane => {
-            if (!plane.assignedroute) return plane;
+            if (!plane.assignedRoute) return plane;
 
             const newCondition = plane.condition - 1;
 
             if (newCondition <= 0) {
-              maintenanceFines += 100000000;
+              maintenanceFines += 10000000;
               return { ...plane, condition: 0, assignedRoute: null};
             }
 
@@ -95,20 +96,19 @@ function App() {
             return { ...plane, condition: newCondition };
           });
 
-          let opeartingCosts = prevState.ownedPlanes.length * 500;
-          if (newEvent && newEvent.type === "cost") opeartingCosts *= newEvent.multiplier;
+          let dailyInterest = (prevState.debt || 0) * 0.02;
+          let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest;
+          if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
 
           return {
             ...prevState,
             day: prevState.day + 1,
             reputation: newReputation,
             ownedPlanes: updatedPlanes,
-            money: Math.max(0, prevState.money + dailyProfit - opeartingCosts - maintenanceFines),
+            money: Math.max(0, prevState.money + dailyProfit - operatingCosts - maintenanceFines),
             activeEvent: newEvent,
             eventDaysLeft: newEventDays,
             history: [...prevState.history, {
-              day: `Day ${prevState.day}`,
-              balance: prevState.money,
               day: `Day ${prevState.day}`,
               balance: prevState.money
             }].slice(-80)
@@ -195,6 +195,26 @@ function App() {
       }))
     } else {
       alert("Not enough funds for maintenance!");
+    }
+  };
+
+  const takeLoan = () => {
+    setGameState(prev => ({
+      ...prev,
+      money: prev.money + 10000000,
+      debt: (prev.debt || 0) + 10000000
+    }));
+  };
+
+  const repayLoan = () => {
+    if (gameState.money >= 10000000 && gameState.debt > 0) {
+      setGameState(prev => ({
+        ...prev,
+        money: prev.money - 10000000,
+        debt: prev.debt - 10000000
+      }));
+    } else {
+      alert("pay ur loan")
     }
   };
 
@@ -477,32 +497,47 @@ function App() {
 
         {activeTab === 'finances' && (
           <Card isBlurred className="flex-1 p-8 bg-background/40 border-none shadow-lg flex flex-col">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">Financial Overview</h2>
-                  <p className="text-sm text-default-500 mb-8">30-Day balance history</p>
+            <div className="flex justify-between items-start mb-6 gap-4">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold mb-2">Financial Overview</h2>
+                    <p className="text-sm text-default-500 mb-8">30-Day Balance History</p>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Card className="p-4 bg-default-100/10 border border-default-200/20 w-64 shadow-inner">
+                      <p className="text-sm font-bold mb-3 flex justify-between">
+                        Ticket Pricing
+                        <span className="text-primary">{gameState.ticketPrice?.toFixed(1) || 1.0}x</span>
+                      </p>
+                      <input
+                        type="range"
+                        min="0.5" max="3.0" step="0.1"
+                        value={gameState.ticketPrice || 1.0}
+                        onChange={(e) => setGameState(prev => ({...prev, ticketPrice: parseFloat(e.target.value)}))}
+                        className="w-full accent-primary mb-2 cursor-pointer"
+                      />
+                      <p className="text-xs text-default-500">
+                        {gameState.ticketPrice > 1.2 ? "⚠️ Draining Reputation!" : "✓ Prices are fair."}
+                      </p>
+                    </Card>
+
+                    <Card className="p-4 bg-default-100/10 border border-default-200/20 w-64 shadow-inner flex flex-col justify-between">
+                      <div>
+                        <p className="text-sm font-bold flex justify-between">
+                          Corporate Debt
+                          <span className="text-danger">${(gameState.debt || 0).toLocaleString()}</span>
+                        </p>
+                        <p className="text-xs text-default-500 mt-1">2% daily interest rate.</p>
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <Button size="sm" color="success" variant="flat" className="flex-1" onPress={takeLoan}>Loan $10M</Button>
+                        <Button size="sm" color="danger" variant="flat" className="flex-1" onPress={repayLoan} isDisabled={!gameState.debt}>Repay $10M</Button>
+                      </div>
+                    </Card>
+                  </div>
                 </div>
 
-                <Card className="p-4 bg-default-100/10 border border-default-200/20 w-80 shadow-inner">
-                  <p className="text-sm font-bold mb-3 flex justify-between">
-                    Ticket Pricing
-                    <span className="text-primary">{gameState.ticketPrice?.toFixed(1) || 1.0}x</span>
-                  </p>
-                  <input
-                      type="range"
-                      min="0.5" max="3.0" step="0.1"
-                      value={gameState.ticketPrice || 1.0}
-                      onChange={(e) => setGameState(prev => ({...prev, ticketPrice: parseFloat(e.target.value)}))}
-                      className="w-full accent-primary mb-2 cursor-pointer"
-                    />
-                    <p className="text-xs text-default-500">
-                      {gameState.ticketPrice > 1.2 ? "⚠️ High prices are draining Reputation!" : "✓ Prices are fair. Customers are happy."}
-                    </p>
-                  </Card>
-                </div>
-                <div className="flex-1 w-full min-h-[300px]"></div>
-                </Card>
-
+                <div className="flex-1 w-full min-h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={gameState.history}>
                   <XAxis dataKey="day" stroke="#8b95a5" fontSize={12} tickLine={false} axisLine={false} />
