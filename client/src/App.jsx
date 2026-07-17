@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Button, Divider } from '@nextui-org/react';
-import { Plane, Map, Settings, Play, Pause, FastForward, BarChart3 } from 'lucide-react';
+import { Card, Button, Divider, Progress } from '@nextui-org/react';
+import { Plane, Map, Settings, Play, Pause, FastForward, BarChart3, BadgeAlert } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Globe from 'react-globe.gl';
 
@@ -59,23 +59,34 @@ function App() {
             newEventDays = newEvent.duration;
           }
 
-          const dailyProfit = prevState.ownedPlanes.reduce((total, plane) => {
-            if (plane.assignedRoute) {
-              const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
-              let revenue = route ? route.baseRevenue : 0;
-              if (newEvent && newEvent.type === "revenue") revenue *= newEvent.multiplier;
-              return total + revenue;
+          let dailyProfit = 0;
+          let maintenanceFines = 0;
+
+          const updatedPlanes = prevState.ownedPlanes.map(plane => {
+            if (!plane.assignedRoute) return plane;
+
+            const newCondition = plane.condition - 1;
+
+            if (newCondition <= 0) {
+              maintenanceFines += 100000000;
+              return { ...plane, condition: 0, assignedRoute: null};
             }
-            return total;
-          },0);
+
+            const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
+            let revenue = route ? route.baseRevenue : 0;
+            if (newEvent && newEvent.type === "revenue") revenue *= newEvent.multiplier;
+            dailyProfit += revenue;
+            return { ...plane, condition: newCondition };
+          });
 
           let operatingCosts = prevState.ownedPlanes.length * 500;
-          if(newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
+          if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
 
           return {
             ...prevState,
             day: prevState.day + 1,
-            money: Math.max(0, prevState.money + dailyProfit - operatingCosts),
+            ownedPlanes: updatedPlanes,
+            money: Math.max(0, prevState.money + dailyProfit - operatingCosts - maintenanceFines),
             activeEvent: newEvent,
             eventDaysLeft: newEventDays,
             history: [...prevState.history, {
@@ -118,7 +129,7 @@ function App() {
       setGameState(prev => ({
         ...prev,
         money: prev.money - plane.price,
-        ownedPlanes: [...prev.ownedPlanes, { ...plane, instanceId: Date.now() }]
+        ownedPlanes: [...prev.ownedPlanes, { ...plane, instanceId: Date.now(), condition: 100 }]
       }));
     } else {
       alert("Not enough funds");
@@ -151,6 +162,21 @@ function App() {
 
       return { ...prev, ownedPlanes: newPlanes };
     });
+  };
+
+  const repairPlane = (instanceId) => {
+    const repairCost = 250000;
+    if(gameState.money >= repairCost) {
+      setGameState(prev => ({
+        ...prev,
+        money: prev.money - repairCost,
+        ownedPlanes: prev.ownedPlanes.map( p =>
+          p.instanceId === instanceId ? { ...p, condition: 100 } : p
+        )
+      }))
+    } else {
+      alert("Not enough funds for maintenance!");
+    }
   };
 
   const saveGame = () => {
@@ -332,12 +358,34 @@ function App() {
                 <p className="text-default-500">No planes owned yet.</p>
               ) : (
                 gameState.ownedPlanes.map(plane => (
-                  <Card key={plane.instanceId} className="p-4 bg-primary/10 border border-primary/30 flex justify-between items-center flex-row">
-                    <div>
-                      <h3 className="font-semibold">{plane.name}</h3>
-                      <p className="text-xs text-default-400">Status: {plane.assignedRoute ? 'Flying' : 'Idle'}</p>
+                  <Card key={plane.instanceId} className="p-4 bg-primary/10 border border-primary/30 flex flex-col gap-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-semibold">{plane.name}</h3>
+                        <p className="text-xs text-default-400">
+                          Status: {plane.condition <= 0 ? <span className="text-danger font-bold">GROUNDED</span> : (plane.assignedRoute ? 'Flying' : 'Idle')}
+                        </p>
+                      </div>
+                      <Plane size={24} className={plane.condition <= 20 ? "text-danger animate-pulse" : "text-primary opacity-50"} />
                     </div>
-                    <Plane size={24} className="text-primary opacity-50" />
+
+                    <div className="flex items-center gap-4">
+                      <Progress
+                        size="sm"
+                        color={plane.condition > 50 ? "success" : plane.condition > 20 ? "warning" : "danger"}
+                        value={plane.condition || 0}
+                        className="flex-1"
+                      />
+                      <Button
+                        size="sm"
+                        color="warning"
+                        variant="flat"
+                        onPress={() => repairPlane(plane.instanceId)}
+                        isDisabled={plane.condition === 100}
+                      >
+                        Repair (250k)
+                      </Button>                        
+                    </div>
                   </Card>
                 ))
               )}
