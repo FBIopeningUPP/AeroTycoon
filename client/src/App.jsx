@@ -67,6 +67,18 @@ function App() {
 
           let newReputation = prevState.reputation;
           let newMarketing = Math.max(0, (prevState.marketingActive || 0) - 1);
+          let newCompetitors = [...(prevState.competitors || [])];
+
+          // 2% chance per day a rival airline invades an unlocked route
+          if (Math.random() < 0.02) {
+            const unlockedRoutes = prevState.destinations.filter(d => d.isUnlocked && d.id !== 'd1');
+            if (unlockedRoutes.length > 0) {
+              const target = unlockedRoutes[Math.floor(Math.random() * unlockedRoutes.length)];
+              if (!newCompetitors.find(c => c.routeId === target.id)) {
+                 newCompetitors.push({ routeId: target.id, health: 100 });
+              }
+            }
+          }
 
           if (newMarketing > 0) {
             newReputation = 100;
@@ -79,86 +91,58 @@ function App() {
               newReputation += 0.2;
             }
           }
+          newReputation = Math.max(0, Math.min(100, newReputation));
 
-          let newReputation = prevState.reputation;
-          let newMarketing = Math.max(0, (prevState.marketingActive || 0) - 1);
-          let newCompetitors = [...(prevState.competitors || [])];
+          let dailyProfit = 0;
+          let maintenanceFines = 0;
+          const conditionDecay = Math.max(0.2, 1.0 - ((prevState.mechanics || 0) * 0.1));
 
-          if (Math.random() < 0.02) {
-            const unlockedRoutes = prevState.destinations.filter(d => d.isUnlocked && d.id !== 'd1');
-            if (unlockedRoutes.length > 0) {
-              const target = unlockedRoutes[Math.floor(Math.random() * unlockedRoutes.length)];
-              if (unlockedRoutes.length > 0) {
-                const target = unlockedRoutes[Math.floor(Math.random() * unlockedRoutes.length)];
-                if (!newCompetitors.find(c => c.routeId === target.id)) {
-                  newCompetitors.push({ routeId: target.id, health: 100});
-                }
-              }
+          const updatedPlanes = prevState.ownedPlanes.map(plane => {
+            if (!plane.assignedRoute) return plane;
+            const newCondition = plane.condition - conditionDecay;
+            if (newCondition <= 0) {
+              maintenanceFines += 10000000;
+              return { ...plane, condition: 0, assignedRoute: null};
             }
 
-            if (newMarketing > 0) {
-              newReputation = 100;
-            } else {
-              if (prevState.ticketPrice > 1.2) {
-                newReputation -= (prevState.ticketPrice - 1.0) * 0.5;
-              } else if (prevState.ticketPrice < 1.0) {
-                newReputation += (1.0 - prevState.ticketPrice);
-              } else if (newReputation < 85) {
-                newReputation += 0.2;
-              }
+            const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
+            let revenue = route ? route.baseRevenue : 0;
+            if (newEvent && newEvent.type === "revenue") revenue *= newEvent.multiplier;
+
+            // Check if a competitor is stealing revenue
+            const rivalIndex = newCompetitors.findIndex(c => c.routeId === plane.assignedRoute);
+            if (rivalIndex !== -1) {
+               revenue *= 0.6; // Rival steals 40% of the market!
+               if (prevState.ticketPrice <= 0.8) {
+                  newCompetitors[rivalIndex].health -= 5; // Price war! Damage them!
+               }
             }
-            newReputation = Math.max(0, Math.min(100, newReputation));
 
-            let dailyProfit = 0;
-            let maintenanceFines = 0;
-            const condiitonDecay = Math.max(0.2, 1.0 - ((prevState.mechanics || 0) * 0.1));
+            revenue = revenue * prevState.ticketPrice * (newReputation / 100);
+            dailyProfit += revenue;
+            return { ...plane, condition: newCondition };
+          });
 
-            const updatedPlanes = prevState.ownedPlanes.map(plane => {
-              if (!plane.assignedRoute) return plane;
-              const newCondition = plane.condition - conditionDecay;
-              if (newCondition <= 0) {
-                maintenanceFines += 10000000;
-                return { ...plane, condition: 0, assignedRoute: null};
-              } 
+          newCompetitors = newCompetitors.filter(c => c.health > 0); // Remove bankrupt rivals
+          let dailyInterest = (prevState.debt || 0) * 0.02;
+          let mechanicSalaries = (prevState.mechanics || 0) * 1000;
+          let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries;
+          if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
 
-              const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
-              let revenue = route ? route.baseRevenue : 0;
-              if (newEvent && newEvent.type === "revenue") revenue *= newEvent.multiplier;
-
-              const rivalIndex = newCompetitors.findIndex(c => c.routeId === plane.assignedRoute);
-              if (rivalIndex !== -1) {
-                revenue *= 0.6;
-                if (prevState.ticketPrice <= 0.8) {
-                  newCompetitors[rivalIndex].health -= 5;
-                }
-              }
-
-              revenue = revenue * prevState.ticketPrice * (newReputation / 100);
-              dailyProfit += revenue;
-              return { ...plane, condition: newCondition };
-            });
-
-            newCompetitors = newCompetitors.filter(c => c.health > 0);
-            let dailyInterest = (prevState.debt || 0) * 0.2;
-            let mechanicSalaries = (prevState.mechanics || 0) * 1000;
-            let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries;
-            if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
-
-            return {
-              ...prevState,
-              day: prevState.day + 1,
-              reputation: newReputation,
-              marketingActive: newMarketing,
-              competitors: newCompetitors,
-              ownedPlanes: updatedPlanes,
-              money: Math.max(0, prevState.money + dailyProfit - operatingCosts - maintenanceFines),
-              activeEvent: newEvent,
-              eventDaysLeft: newEventDays,
-              history: [...prevState.history, {
-                day: `Day ${prevState.day}`,
-                balance: prevState.money
-              }].slice(-80)
-            };
+          return {
+            ...prevState,
+            day: prevState.day + 1,
+            reputation: newReputation,
+            marketingActive: newMarketing,
+            competitors: newCompetitors,
+            ownedPlanes: updatedPlanes,
+            money: Math.max(0, prevState.money + dailyProfit - operatingCosts - maintenanceFines),
+            activeEvent: newEvent,
+            eventDaysLeft: newEventDays,
+            history: [...prevState.history, {
+              day: `Day ${prevState.day}`,
+              balance: prevState.money
+            }].slice(-80)
           };
         });
       }, gameState.gameSpeed);
@@ -550,6 +534,7 @@ function App() {
             <div className="flex flex-col gap-4">
               {gameState.destinations.map(dest => {
                 const activePlanes = gameState.ownedPlanes.filter(p => p.assignedRoute === dest.id).length;
+                const rival = (gameState.competitors || []).find(c => c.routeId === dest.id);
 
                 return (
                   <Card key={dest.id} className="p-4 bg-default-100/10 border border-default-200/20 flex flex-row justify-between items-center">
@@ -561,23 +546,40 @@ function App() {
                         ) : (
                           <span className="text-xs bg-danger/20 text-danger px-2 py-1 rounded">Locked</span>
                         )}
+                        {rival && (
+                          <span className="text-xs bg-danger text-white px-2 py-1 rounded font-bold animate-pulse">⚔️ CONTESTED!</span>
+                        )}
                       </h3>
                       <p className="text-sm text-default-500">
                         {dest.isUnlocked
                           ? `Generating: $${dest.baseRevenue}/day per plane | Active Planes: ${activePlanes}`
                           : `Unlock Cost: $${(dest.cost / 1000000).toFixed(1)}M`}
                       </p>
+                      {rival && (
+                         <p className="text-xs text-danger font-bold mt-1">
+                           Rival stealing 40% revenue! Drop Ticket Price to 0.8x to fight!
+                         </p>
+                      )}
                     </div>
 
-                    {dest.isUnlocked ? (
-                      <Button color="primary" variant="flat" onPress={() => assignPlaneToRoute(dest.id)}>
-                        Assign Idle Plane
-                      </Button>
-                    ) : (
-                      <Button color="warning" variant="flat" onPress={() => unlockRoute(dest.id, dest.cost)}>
-                        Unlock Route
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-6">
+                      {rival && (
+                        <div className="flex flex-col gap-1 w-32 text-right">
+                          <p className="text-xs font-bold text-danger">RIVAL HP: {rival.health}</p>
+                          <Progress size="sm" color="danger" value={rival.health} />
+                        </div>
+                      )}
+
+                      {dest.isUnlocked ? (
+                        <Button color="primary" variant="flat" onPress={() => assignPlaneToRoute(dest.id)}>
+                          Assign Idle Plane
+                        </Button>
+                      ) : (
+                        <Button color="warning" variant="flat" onPress={() => unlockRoute(dest.id, dest.cost)}>
+                          Unlock Route
+                        </Button>
+                      )}
+                    </div>
                   </Card>
                 );
               })}
