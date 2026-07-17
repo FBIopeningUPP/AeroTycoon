@@ -5,7 +5,8 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, matchByInd
 import Globe from 'react-globe.gl';
 import { hsla } from 'framer-motion';
 import ServicesTab from './ServicesTab';
-import { Coffee } from 'lucide-react';
+import AcquisitionTab from './AcquisitionsTab';
+import { Coffee, Briefcase } from 'lucide-react';
 
 function App() {
   const [gameState, setGameState] = useState(() => {
@@ -115,7 +116,7 @@ function App() {
 
               let dailyProfit = 0;
               let maintenanceFines = 0;
-              const conditionDecay = Math.max(0.2, 1.0 - ((prevState.mechanics || 0) * 0.1));
+              const conditionDecay = prevState.acquisitions?.aeroTech ? 0 : Math.max(0.2, 1.0 - ((prevState.mechanics || 0) * 0.1));
 
               const updatedPlanes = prevState.ownedPlanes.map(plane => {
                 if (!plane.assignedRoute) return plane;
@@ -149,6 +150,9 @@ function App() {
                 if (prevState.services?.wifi) revenue *= 1.1;
                 if (prevState.services?.drinks) revenue *= 1.25;
                 if (prevState.services?.food && newReputation < 95) newReputation += 0.5; // Food boosts rep!
+
+                if (prevState.acquisitions?.budgetJet) revenue *= 1.3;
+                if (prevState.acquisitions?.globalAir) revenue *= 1.5;
 
                 const rivalIndex = newCompetitors.findIndex(c => c.routeId === plane.assignedRoute);
                 if (rivalIndex !== -1) {
@@ -449,6 +453,12 @@ function App() {
             label="Services"
             isActive={activeTab === 'services'}
             onPress={() => setActiveTab('services')}
+          />
+          <NavButton
+            icon={<Briefcase size={18} />}
+            label="Acquisitions"
+            isActive={activeTab === 'acquisitions'}
+            onPress={() => setActiveTab('acquisitions')}
           />        
         </div>
 
@@ -868,6 +878,9 @@ function App() {
         )}
         {activeTab === 'services' && (
           <ServicesTab gameState={gameState} setGameState={setGameState} />
+        )}
+        {activeTab === 'acquisitions' && (
+          <AcquisitionTab gameState={gameState} setGameState={setGameState} />
         )}
         {gameState.money < 0 && (
           <div className="fixed inset-0 z-50 bg-danger/90 backdrop-blur-md flex flex-col items-center justify-center text-white">
