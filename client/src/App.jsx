@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Button, Divider, Progress } from '@nextui-org/react';
 import { Plane, Map, Settings, Play, Pause, FastForward, BarChart3, BadgeAlert } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, matchByIndex } from 'recharts';
 import Globe from 'react-globe.gl';
+import { hsla } from 'framer-motion';
 
 function App() {
   const [gameState, setGameState] = useState(() => {
@@ -14,6 +15,7 @@ function App() {
     return {
       money: 15000000, 
       reputation: 85,
+      ticketPrice: 1.0,
       day: 1,
       isPaused: true,
       gameSpeed: 1000,
@@ -59,11 +61,22 @@ function App() {
             newEventDays = newEvent.duration;
           }
 
+          let newReputation = prevState.reputation;
+          if (prevState.ticketPrice > 1.2) {
+            newReputation -= (prevState.ticketPrice - 1.0) * 0.5;
+          } else if (prevState.ticketPrice < 1.0) {
+            newReputation += (1.0 - prevState.ticketPrice);
+          } else if (newReputation < 85) {
+            newReputation += 0.2;
+          }
+
+          newReputation = Math.max(0, Math.min(100, newReputation));
+
           let dailyProfit = 0;
           let maintenanceFines = 0;
 
           const updatedPlanes = prevState.ownedPlanes.map(plane => {
-            if (!plane.assignedRoute) return plane;
+            if (!plane.assignedroute) return plane;
 
             const newCondition = plane.condition - 1;
 
@@ -75,21 +88,27 @@ function App() {
             const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
             let revenue = route ? route.baseRevenue : 0;
             if (newEvent && newEvent.type === "revenue") revenue *= newEvent.multiplier;
+
+            revenue = revenue * prevState.ticketPrice * (newReputation / 100);
+
             dailyProfit += revenue;
             return { ...plane, condition: newCondition };
           });
 
-          let operatingCosts = prevState.ownedPlanes.length * 500;
-          if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
+          let opeartingCosts = prevState.ownedPlanes.length * 500;
+          if (newEvent && newEvent.type === "cost") opeartingCosts *= newEvent.multiplier;
 
           return {
             ...prevState,
             day: prevState.day + 1,
+            reputation: newReputation,
             ownedPlanes: updatedPlanes,
-            money: Math.max(0, prevState.money + dailyProfit - operatingCosts - maintenanceFines),
+            money: Math.max(0, prevState.money + dailyProfit - opeartingCosts - maintenanceFines),
             activeEvent: newEvent,
             eventDaysLeft: newEventDays,
             history: [...prevState.history, {
+              day: `Day ${prevState.day}`,
+              balance: prevState.money,
               day: `Day ${prevState.day}`,
               balance: prevState.money
             }].slice(-80)
@@ -458,10 +477,32 @@ function App() {
 
         {activeTab === 'finances' && (
           <Card isBlurred className="flex-1 p-8 bg-background/40 border-none shadow-lg flex flex-col">
-            <h2 className="text-2xl font-bold mb-2">Financial Overview</h2>
-            <p className="text-sm text-default-500 mb-8">30-Day Balance History</p>
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">Financial Overview</h2>
+                  <p className="text-sm text-default-500 mb-8">30-Day balance history</p>
+                </div>
 
-            <div className="flex-1 w-full min-h-[300px]">
+                <Card className="p-4 bg-default-100/10 border border-default-200/20 w-80 shadow-inner">
+                  <p className="text-sm font-bold mb-3 flex justify-between">
+                    Ticket Pricing
+                    <span className="text-primary">{gameState.ticketPrice?.toFixed(1) || 1.0}x</span>
+                  </p>
+                  <input
+                      type="range"
+                      min="0.5" max="3.0" step="0.1"
+                      value={gameState.ticketPrice || 1.0}
+                      onChange={(e) => setGameState(prev => ({...prev, ticketPrice: parseFloat(e.target.value)}))}
+                      className="w-full accent-primary mb-2 cursor-pointer"
+                    />
+                    <p className="text-xs text-default-500">
+                      {gameState.ticketPrice > 1.2 ? "⚠️ High prices are draining Reputation!" : "✓ Prices are fair. Customers are happy."}
+                    </p>
+                  </Card>
+                </div>
+                <div className="flex-1 w-full min-h-[300px]"></div>
+                </Card>
+
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={gameState.history}>
                   <XAxis dataKey="day" stroke="#8b95a5" fontSize={12} tickLine={false} axisLine={false} />
