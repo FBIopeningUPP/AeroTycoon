@@ -462,6 +462,20 @@ function App() {
             </div>
           </Card>
         )}
+        {gameState.money < 0 && (
+          <div className="fixed inset-0 z-50 bg-danger/90 backdrop-blur-md flex flex-col items-center justify-center text-white">
+            <h1 className="text-6xl font-bold mb-4">BANKRUPT</h1>
+            <p className="text-xl mb-8">Yu ran out of mooonaaaay</p>
+            <Button size="lg" color="default" variant="shadow" onPress={resetGame}>Try Again bruh</Button>
+          </div>
+        )}
+        {gameState.money >= 100000000 && (
+          <div className="fixed inset-0 z-50 bg-success/90 backdrop-blur-md flex flex-col items-center justify-center text-white">
+            <h1 className="text-6xl font-bold mb-4">Billionare jeffbezos is taht u</h1>
+            <p className="text-xl mb-8">CONGOS TO U</p>
+            <Button size="lg" color="default" variant="shadow" onPress={resetGame}>Play again</Button>
+          </div>
+        )}
       </div>
     </div>
   );
