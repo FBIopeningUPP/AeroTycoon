@@ -138,7 +138,7 @@ function App() {
           else if (newReputation < 50) newSharePrice *= 0.95;
           newSharePrice = Math.max(10, newSharePrice);
 
-          let dailyInterest = (prevState.debt || 0) * 0.2;
+          let dailyInterest = (prevState.debt || 0) * 0.02;
           let mechanicSalaries = (prevState.mechanics || 0) * 1000;
           let dividendCost = (prevState.sharesIssued || 0) * newSharePrice * 0.05;
           
@@ -298,13 +298,13 @@ function App() {
         research: { ...(prev.research || {}), [tech]: true }
       }));
     } else {
-      alert("not enough fund or already reaseached")
+      alert("Not enough funds or already researched!");
     }
   };
 
   const issueShares = () => {
     if ((gameState.sharesIssued || 0) >= 1000) {
-      alert("the sec wont allow you to issue more")
+      alert("The SEC won't allow you to issue more than 1000 shares!");
       return;
     }
     setGameState(prev => ({
@@ -324,7 +324,7 @@ function App() {
           money: prev.money - cost
         }));
       } else {
-        alert("not enough funds for stkc buy back");
+        alert("Not enough funds for stock buyback!");
       }
     }
   };
@@ -729,8 +729,8 @@ function App() {
         )}
         {activeTab === 'settings' && (
           <Card isBlurred className="flex-1 p-8 bg-background/40 border-none shadow-lg overflow-y-auto">
-            <h2 className="text-3xl font-bold mb-2">Research & developemtnt</h2>
-            <p className="text-default-500 mb-8">Invest in permanent corp ugrade</p>
+            <h2 className="text-3xl font-bold mb-2">Research & Development</h2>
+            <p className="text-default-500 mb-8">Invest in permanent corporate upgrades</p>
 
             <div className="grid grid-cols-3 gap-6 w-full mb-12">
               <Card className="p-4 bg-primary/10 border border-primary/20">
