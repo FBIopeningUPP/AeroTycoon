@@ -64,8 +64,8 @@ function App() {
             newEventDays = newEvent.duration;
           }
 
-          let newReputation = prevState.reputationl
-          let newMarketing = Math.max(0, (prevState.marketingActive || 0) -1);
+          let newReputation = prevState.reputation;
+          let newMarketing = Math.max(0, (prevState.marketingActive || 0) - 1);
 
           if (newMarketing > 0) {
             newReputation = 100;
@@ -93,7 +93,7 @@ function App() {
 
             if(newCondition <= 0) {
               maintenanceFines += 10000000;
-              return { ... plane, condition: 0, assignedRoute: null};
+              return { ...plane, condition: 0, assignedRoute: null};
             }
 
             const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
@@ -226,20 +226,20 @@ function App() {
         debt: prev.debt - 10000000
       }));
     } else {
-      alert("pay ur loan")
+      alert("You need $10M to repay this loan block!");
     }
   };
 
   const buyMarketing = () => {
-    const cost = 500000;
+    const cost = 5000000;
     if (gameState.money >= cost) {
       setGameState(prev => ({
         ...prev,
-        money: prev.money-cost,
+        money: prev.money - cost,
         marketingActive: 14
       }));
     } else {
-      alert("not enough fundd for mraketing camaping")
+      alert("Not enough funds for Marketing Campaign ($5M)!");
     }
   };
 
@@ -251,7 +251,7 @@ function App() {
         mechanics: (prev.mechanics || 0) + 1
       }));
     } else {
-      alert("not enough monay to gat machanaac")
+      alert("Not enough funds to hire a Mechanic ($50k)!");
     }
   };
 
@@ -385,24 +385,24 @@ function App() {
           <Card isBlurred className="flex-1 overflow-hidden bg-background/40 border-none shadow-lg relative">
             <div className="absolute top-4 left-4 z-20 pointer-events-none">
               <h2 className="text-2xl font-bold text-primary drop-shadow-md">Global Command</h2>
-              <p className="text-default-400">Drag to rotate scroll to zoom</p>
+              <p className="text-default-400">Drag to rotate • Scroll to zoom</p>
             </div>
 
             <div className="absolute bottom-6 left-6 z-20 flex gap-4 pointer-events-none">
-              <Card className="p-4 bg-background/80 backdrop-blue-md border border-default-200/50 w-64 shadow-lg pointer-events-auto">
+              <Card className="p-4 bg-background/80 backdrop-blur-md border border-default-200/50 w-64 shadow-lg pointer-events-auto">
                 <h3 className="font-bold text-lg mb-2">Marketing Dept</h3>
-                <p className="text-xs text-default-400 mb-4">Super Bowl Ad: Max Rep for 14 days.</p>
+                <p className="text-xs text-default-400 mb-4">Super Bowl Ad: Max Reputation for 14 Days.</p>
                 {gameState.marketingActive > 0 ? (
                   <Button color="success" variant="flat" fullWidth isDisabled>Active ({gameState.marketingActive} days)</Button>
                 ) : (
-                  <Button color="primary" variant="shadow" fullWidth onPress={buyMarketing}>Run ad</Button>
-                )}  
+                  <Button color="primary" variant="shadow" fullWidth onPress={buyMarketing}>Run Ad ($5M)</Button>
+                )}
               </Card>
 
               <Card className="p-4 bg-background/80 backdrop-blur-md border border-default-200/50 w-64 shadow-lg pointer-events-auto">
                 <h3 className="font-bold text-lg mb-2 flex justify-between">HR Dept <span className="text-primary">{gameState.mechanics || 0} Hired</span></h3>
-                <p className="text-xs text-default-400 mb-4">Mechanics slow plane dmanage. $1k/day salary.</p>
-                <Button color="warning" variant="shadow" fullWidth onPress={hireMechanic}>Hire Mechanic($50k)</Button>
+                <p className="text-xs text-default-400 mb-4">Mechanics slow plane damage. $1k/day salary.</p>
+                <Button color="warning" variant="shadow" fullWidth onPress={hireMechanic}>Hire Mechanic ($50k)</Button>
               </Card>
             </div>
 
