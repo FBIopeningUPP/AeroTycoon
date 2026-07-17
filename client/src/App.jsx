@@ -17,6 +17,7 @@ function App() {
       debt: 0,
       marketingActive: 0,
       mechanics: 0,
+      competitors: [],
       reputation: 85,
       ticketPrice: 1.0,
       day: 1,
@@ -79,51 +80,85 @@ function App() {
             }
           }
 
-          newReputation = Math.max(0, Math.min(100, newReputation));
+          let newReputation = prevState.reputation;
+          let newMarketing = Math.max(0, (prevState.marketingActive || 0) - 1);
+          let newCompetitors = [...(prevState.competitors || [])];
 
-          let dailyProfit = 0;
-          let maintenanceFines = 0;
-
-          const conditionDecay = Math.max(0.2, 1.0 - ((prevState.mechanics || 0) * 0.1));
-
-          const updatedPlanes = prevState.ownedPlanes.map(plane => {
-            if (!plane.assignedRoute) return plane;
-
-            const newCondition = plane.condition - conditionDecay;
-
-            if(newCondition <= 0) {
-              maintenanceFines += 10000000;
-              return { ...plane, condition: 0, assignedRoute: null};
+          if (Math.random() < 0.02) {
+            const unlockedRoutes = prevState.destinations.filter(d => d.isUnlocked && d.id !== 'd1');
+            if (unlockedRoutes.length > 0) {
+              const target = unlockedRoutes[Math.floor(Math.random() * unlockedRoutes.length)];
+              if (unlockedRoutes.length > 0) {
+                const target = unlockedRoutes[Math.floor(Math.random() * unlockedRoutes.length)];
+                if (!newCompetitors.find(c => c.routeId === target.id)) {
+                  newCompetitors.push({ routeId: target.id, health: 100});
+                }
+              }
             }
 
-            const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
-            let revenue = route ? route.baseRevenue : 0;
-            if (newEvent && newEvent.type === "revenue") revenue *= newEvent.multiplier;
+            if (newMarketing > 0) {
+              newReputation = 100;
+            } else {
+              if (prevState.ticketPrice > 1.2) {
+                newReputation -= (prevState.ticketPrice - 1.0) * 0.5;
+              } else if (prevState.ticketPrice < 1.0) {
+                newReputation += (1.0 - prevState.ticketPrice);
+              } else if (newReputation < 85) {
+                newReputation += 0.2;
+              }
+            }
+            newReputation = Math.max(0, Math.min(100, newReputation));
 
-            revenue = revenue * prevState.ticketPrice * (newReputation / 100);
+            let dailyProfit = 0;
+            let maintenanceFines = 0;
+            const condiitonDecay = Math.max(0.2, 1.0 - ((prevState.mechanics || 0) * 0.1));
 
-            dailyProfit += revenue;
-            return { ...plane, condition: newCondition};
-          });
+            const updatedPlanes = prevState.ownedPlanes.map(plane => {
+              if (!plane.assignedRoute) return plane;
+              const newCondition = plane.condition - conditionDecay;
+              if (newCondition <= 0) {
+                maintenanceFines += 10000000;
+                return { ...plane, condition: 0, assignedRoute: null};
+              } 
 
-          let dailyInterest = (prevState.debt || 0) * 0.02;
-          let mechanicSalaries = (prevState.mechanics || 0) * 1000;
-          let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries;
-          if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
+              const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
+              let revenue = route ? route.baseRevenue : 0;
+              if (newEvent && newEvent.type === "revenue") revenue *= newEvent.multiplier;
 
-          return {
-            ...prevState,
-            day: prevState.day + 1,
-            reputation: newReputation,
-            marketingActive: newMarketing,
-            ownedPlanes: updatedPlanes,
-            money: Math.max(0, prevState.money + dailyProfit - operatingCosts - maintenanceFines),
-            activeEvent: newEvent,
-            eventDaysLeft: newEventDays,
-            history: [...prevState.history, {
-              day: `Day ${prevState.day}`,
-              balance: prevState.money
-            }].slice(-80)
+              const rivalIndex = newCompetitors.findIndex(c => c.routeId === plane.assignedRoute);
+              if (rivalIndex !== -1) {
+                revenue *= 0.6;
+                if (prevState.ticketPrice <= 0.8) {
+                  newCompetitors[rivalIndex].health -= 5;
+                }
+              }
+
+              revenue = revenue * prevState.ticketPrice * (newReputation / 100);
+              dailyProfit += revenue;
+              return { ...plane, condition: newCondition };
+            });
+
+            newCompetitors = newCompetitors.filter(c => c.health > 0);
+            let dailyInterest = (prevState.debt || 0) * 0.2;
+            let mechanicSalaries = (prevState.mechanics || 0) * 1000;
+            let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries;
+            if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
+
+            return {
+              ...prevState,
+              day: prevState.day + 1,
+              reputation: newReputation,
+              marketingActive: newMarketing,
+              competitors: newCompetitors,
+              ownedPlanes: updatedPlanes,
+              money: Math.max(0, prevState.money + dailyProfit - operatingCosts - maintenanceFines),
+              activeEvent: newEvent,
+              eventDaysLeft: newEventDays,
+              history: [...prevState.history, {
+                day: `Day ${prevState.day}`,
+                balance: prevState.money
+              }].slice(-80)
+            };
           };
         });
       }, gameState.gameSpeed);
