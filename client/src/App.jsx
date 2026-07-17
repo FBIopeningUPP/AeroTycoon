@@ -22,9 +22,14 @@ function App() {
       activeEvent: null,
       eventDaysLeft: 0,
       destinations: [
-        { id: 'd1', name: 'New York (Hub)', cost: 0, isUnlocked: true, baseRevenue: 2000 },
-        { id: 'd2', name: 'London', cost: 3000000, isUnlocked: false, baseRevenue: 8000 },
-        { id: 'd3', name: 'Tokyo', cost: 8000000, isUnlocked: false, baseRevenue: 15000 }
+        { id: 'd1', name: 'New York (Hub)', cost: 0, isUnlocked: true, baseRevenue: 2000, lat: 40.71, lng: -74.00 },
+        { id: 'd2', name: 'London', cost: 3000000, isUnlocked: false, baseRevenue: 8000, lat: 51.50, lng: -0.12 },
+        { id: 'd3', name: 'Paris', cost: 5000000, isUnlocked: false, baseRevenue: 10000, lat: 48.85, lng: 2.35 },
+        { id: 'd4', name: 'Tokyo', cost: 8000000, isUnlocked: false, baseRevenue: 15000, lat: 35.67, lng: 139.65 },
+        { id: 'd5', name: 'Dubai', cost: 12000000, isUnlocked: false, baseRevenue: 22000, lat: 25.20, lng: 55.27 },
+        { id: 'd6', name: 'Rio de Janeiro', cost: 15000000, isUnlocked: false, baseRevenue: 25000, lat: -22.90, lng: -43.17 },
+        { id: 'd7', name: 'Singapore', cost: 18000000, isUnlocked: false, baseRevenue: 28000, lat: 1.35, lng: 103.81 },
+        { id: 'd8', name: 'Sydney', cost: 25000000, isUnlocked: false, baseRevenue: 35000, lat: -33.86, lng: 151.20 }
       ]
     };
   });
@@ -93,26 +98,19 @@ function App() {
     { id: 'p2', name: 'Boeing 737 Max', price: 90000000, capacity: 200, speed: 840 }
   ];
 
-  const { globeCities, globeRoutes } = useMemo(() => {
-    const NY = { lat: 40.71, lng: -74.00 };
-    const LON = { lat: 51.50, lng: -0.12 };
-    const TOK = { lat: 35.67, lng: 139.65 };
-
-    const cities = [
-      { name: 'New York', ...NY, size: 1.5, color: '#00f0ff' },
-      { name: 'London', ...LON, size: 1, color: gameState.destinations[1].isUnlocked ? '#b026ff' : '#555' },
-      { name: 'Tokyo', ...TOK, size: 1, color: gameState.destinations[2].isUnlocked ? '#b026ff' : '#555' }
-    ];
-
+  const { globeCities, globeRoutes} = useMemo(() => {
+    const hub = gameState.destinations[0];
+    const cities = [{name: hub.name, lat: hub.lat, lng: hub.lng, size:1, color: '#00f0ff'}];
     const routes = [];
-    if (gameState.destinations[1].isUnlocked) {
-      routes.push({ startLat: NY.lat, startLng: NY.lng, endLat: LON.lat, endLng: LON.lng });
-    }
-    if (gameState.destinations[2].isUnlocked) {
-      routes.push({ startLat: NY.lat, startLng: NY.lng, endLat: TOK.lat, endLng: TOK.lng });
-    }
 
-    return { globeCities: cities, globeRoutes: routes };
+    for (let i = 1; i < gameState.destinations.length; i++) {
+      const dest = gameState.destinations[i];
+      if (dest.isUnlocked) {
+        cities.push({name: dest.name, lat: dest.lat, lng: dest.lng, size: 0.6, color: '#b026ff' });
+        routes.push({ startLat: hub.lat, startLng: hub.lng, endLat: dest.lat, endLng: dest.lng});
+      }
+    }
+    return {globeCities: cities, globeRoutes: routes};
   }, [gameState.destinations]);
 
   const buyPlane = (plane) => {
@@ -309,7 +307,7 @@ function App() {
                 arcsData={globeRoutes}
                 arcColor={() => ['#ff00ff', '#00ffff']}
                 arcAltitudeAutoScale={0.3}
-                arcStroke={1.5}
+                arcStroke={0.4}
               />
             </div>
           </Card>
