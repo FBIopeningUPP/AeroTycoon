@@ -105,9 +105,17 @@ function App() {
 
           const updatedPlanes = prevState.ownedPlanes.map(plane => {
             if (!plane.assignedRoute) return plane;
-            const newCondition = plane.condition - conditionDecay;
+
+            let currentCondition = plane.condition;
+            const isAce = plane.pilot === 'Ace';
+
+            if (!isAce && Math.random() < 0.05) {
+              currentCondition -= 10;
+            }
+
+            const newCondition = currentCondition - conditionDecay;
             if (newCondition <= 0) {
-              maintenanceFines += 10000000;
+              maintenanceFines += 100000000;
               return { ...plane, condition: 0, assignedRoute: null};
             }
 
@@ -120,13 +128,15 @@ function App() {
 
             const rivalIndex = newCompetitors.findIndex(c => c.routeId === plane.assignedRoute);
             if (rivalIndex !== -1) {
-               revenue *= 0.6; 
-               if (prevState.ticketPrice <= 0.8) {
-                  newCompetitors[rivalIndex].health -= 5; 
-               }
+              revenue *= 0.6;
+              if (prevState.ticketPrice <= 0.8) {
+                newCompetitors[rivalIndex].health -= 5;
+              }
             }
 
             revenue = revenue * prevState.ticketPrice * (newReputation / 100);
+            if (isAce) revenue *= 1.2;
+
             dailyProfit += revenue;
             return { ...plane, condition: newCondition };
           });
@@ -299,6 +309,21 @@ function App() {
       }));
     } else {
       alert("Not enough funds or already researched!");
+    }
+  };
+
+  const trainPilot = (instanceId) => {
+    const cost = 1000000;
+    if (gameState.money >= cost) {
+      setGameState(prev => ({
+        ...prev,
+        money: prev.money - cost,
+        ownedPlanes: prev.ownedPlanes.map(p =>
+          p.instanceId === instanceId ? {...p, pilot: 'Ace'} : p
+        )
+      }));
+    } else {
+      alert("Not enough funds to train an Ace Pilot ($1M)!");
     }
   };
 
@@ -533,6 +558,9 @@ function App() {
                         <p className="text-xs text-default-400">
                           Status: {plane.condition <= 0 ? <span className="text-danger font-bold">GROUNDED</span> : (plane.assignedRoute ? 'Flying' : 'Idle')}
                         </p>
+                        <p className="text-xs mt-1">
+                          Pilot: {plane.pilot === 'Ace' ? <span className="text-success font-bold">★ Ace Pilot</span> : <span className="text-warning">Rookie (Risk of Damage)</span>}
+                        </p>
                       </div>
                       <Plane size={24} className={plane.condition <= 20 ? "text-danger animate-pulse" : "text-primary opacity-50"} />
                     </div>
@@ -552,7 +580,17 @@ function App() {
                         isDisabled={plane.condition === 100}
                       >
                         Repair (250k)
-                      </Button>                        
+                      </Button>  
+                      {plane.pilot !== 'Ace' && (
+                        <Button
+                          size="sm"
+                          color="secondary"
+                          variant="shadow"
+                          onPress={() => trainPilot(plane.instanceId)}
+                        >
+                          Train Ace ($1M)
+                        </Button>
+                      )}                      
                     </div>
                   </Card>
                 ))
