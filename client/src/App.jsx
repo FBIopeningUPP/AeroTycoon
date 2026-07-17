@@ -314,6 +314,21 @@ function App() {
     }));
   };
 
+  const buybackShares = () => {
+    if ((gameState.sharesIssued || 0) >= 100) {
+      const cost = 100 * (gameState.sharePrice || 100);
+      if (gameState.money >= cost) {
+        setGameState(prev => ({
+          ...prev,
+          sharesIssued: prev.sharesIssued - 100,
+          money: prev.money - cost
+        }));
+      } else {
+        alert("not enough funds for stkc buy back");
+      }
+    }
+  };
+
   const saveGame = () => {
     localStorage.setItem('aeroTycoonSave', JSON.stringify(gameState));
     alert("Game Saved Successfully!");
@@ -667,6 +682,21 @@ function App() {
                       </div>
                     </Card>
                   </div>
+
+                  <Card className="p-4 bg-default-100/10 border border-default-200/20 w-72 shadow-inner flex flex-col justify-between">
+                    <div>
+                      <p className="text-sm font-bold flex justify-between">
+                        Stock Market (IPO)
+                        <span className="text-primary">${gameState.sharePrice?.toFixed(2) || 100} / share</span>
+                      </p>
+                      <p className="text-xs text-default-500 mt-1">Shares Issued: {gameState.sharesIssued || 0}</p>
+                      <p className="text-xs text-danger mt-1">5% Daily Dividend Cost: ${(((gameState.sharesIssued || 0) * (gameState.sharePrice || 100)) * 0.05).toLocaleString()}</p>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button size="sm" color="primary" variant="flat" className="flex-1" onPress={issueShares}>Issue 100</Button>
+                      <Button size="sm" color="warning" variant="flat" className="flex-1" onPress={buybackShares} isDisabled={!gameState.sharesIssued}>Buyback 100</Button>
+                    </div>
+                  </Card>
                 </div>
 
                 <div className="flex-1 w-full min-h-[300px]">
