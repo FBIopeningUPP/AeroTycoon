@@ -60,116 +60,136 @@ function App() {
     if (!gameState.isPaused) {
       timer = setInterval(() => {
         setGameState(prevState => {
-          let newEvent = prevState.activeEvent;
-          let newEventDays = prevState.eventDaysLeft;
+              let newEvent = prevState.activeEvent;
+              let newEventDays = prevState.eventDaysLeft;
 
-          if (newEvent && newEventDays > 0) {
-            newEventDays -= 1;
-            if (newEventDays <= 0) newEvent = null;
-          }
-          else if (!newEvent && Math.random() < 0.03 ) {
-            newEvent = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
-            newEventDays = newEvent.duration;
-          }
-
-          let newReputation = prevState.reputation;
-          let newMarketing = Math.max(0, (prevState.marketingActive || 0) - 1);
-          let newCompetitors = [...(prevState.competitors || [])];
-
-          if (Math.random() < 0.02) {
-            const unlockedRoutes = prevState.destinations.filter(d => d.isUnlocked && d.id !== 'd1');
-            if (unlockedRoutes.length > 0) {
-              const target = unlockedRoutes[Math.floor(Math.random() * unlockedRoutes.length)];
-              if (!newCompetitors.find(c => c.routeId === target.id)) {
-                 newCompetitors.push({ routeId: target.id, health: 100 });
+              if (newEvent && newEventDays > 0) {
+                newEventDays -= 1;
+                if (newEventDays <= 0) newEvent = null;
               }
-            }
-          }
-
-          if (newMarketing > 0) {
-            newReputation = 100;
-          } else {
-            if (prevState.ticketPrice > 1.2) {
-              newReputation -= (prevState.ticketPrice - 1.0) * 0.5;
-            } else if (prevState.ticketPrice < 1.0) {
-              newReputation += (1.0 - prevState.ticketPrice);
-            } else if (newReputation < 85) {
-              newReputation += 0.2;
-            }
-          }
-          newReputation = Math.max(0, Math.min(100, newReputation));
-
-          let dailyProfit = 0;
-          let maintenanceFines = 0;
-          const conditionDecay = Math.max(0.2, 1.0 - ((prevState.mechanics || 0) * 0.1));
-
-          const updatedPlanes = prevState.ownedPlanes.map(plane => {
-            if (!plane.assignedRoute) return plane;
-
-            let currentCondition = plane.condition;
-            const isAce = plane.pilot === 'Ace';
-
-            if (!isAce && Math.random() < 0.05) {
-              currentCondition -= 10;
-            }
-
-            const newCondition = currentCondition - conditionDecay;
-            if (newCondition <= 0) {
-              maintenanceFines += 100000000;
-              return { ...plane, condition: 0, assignedRoute: null};
-            }
-
-            const route = prevState.destinations.find(d => d.id === plane.assignedRoute);
-            let revenue = route ? route.baseRevenue : 0;
-            if (newEvent && newEvent.type === "revenue") revenue *= newEvent.multiplier;
-
-            if (prevState.research?.aerodynamics) revenue *= 1.2;
-            if (prevState.research?.luxuryCabins) revenue *= 1.3;
-
-            const rivalIndex = newCompetitors.findIndex(c => c.routeId === plane.assignedRoute);
-            if (rivalIndex !== -1) {
-              revenue *= 0.6;
-              if (prevState.ticketPrice <= 0.8) {
-                newCompetitors[rivalIndex].health -= 5;
+              else if (!newEvent && Math.random() < 0.03 ) {
+                newEvent = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
+                newEventDays = newEvent.duration;
               }
-            }
 
-            revenue = revenue * prevState.ticketPrice * (newReputation / 100);
-            if (isAce) revenue *= 1.2;
+              // LOCALIZED WEATHER SYSTEM
+              const updatedDestinations = prevState.destinations.map(dest => {
+                if (!dest.isUnlocked) return dest;
+                let newWeather = dest.weather || 'Clear';
+                if (Math.random() < 0.05) { // 5% chance weather changes daily
+                  const options = ['Clear', 'Clear', 'Clear', 'Storm', 'Snow'];
+                  newWeather = options[Math.floor(Math.random() * options.length)];
+                }
+                return { ...dest, weather: newWeather };
+              });
 
-            dailyProfit += revenue;
-            return { ...plane, condition: newCondition };
-          });
+              let newReputation = prevState.reputation;
+              let newMarketing = Math.max(0, (prevState.marketingActive || 0) - 1);
+              let newCompetitors = [...(prevState.competitors || [])];
 
-          newCompetitors = newCompetitors.filter(c => c.health > 0);
+              // 2% chance per day a rival airline invades an unlocked route
+              if (Math.random() < 0.02) {
+                const unlockedRoutes = updatedDestinations.filter(d => d.isUnlocked && d.id !== 'd1');
+                if (unlockedRoutes.length > 0) {
+                  const target = unlockedRoutes[Math.floor(Math.random() * unlockedRoutes.length)];
+                  if (!newCompetitors.find(c => c.routeId === target.id)) {
+                     newCompetitors.push({ routeId: target.id, health: 100 });
+                  }
+                }
+              }
 
-          let newSharePrice = prevState.sharePrice || 100;
-          if (newReputation > 90) newSharePrice *= 1.02;
-          else if (newReputation < 50) newSharePrice *= 0.95;
-          newSharePrice = Math.max(10, newSharePrice);
+              if (newMarketing > 0) {
+                newReputation = 100;
+              } else {
+                if (prevState.ticketPrice > 1.2) {
+                  newReputation -= (prevState.ticketPrice - 1.0) * 0.5;
+                } else if (prevState.ticketPrice < 1.0) {
+                  newReputation += (1.0 - prevState.ticketPrice);
+                } else if (newReputation < 85) {
+                  newReputation += 0.2;
+                }
+              }
+              newReputation = Math.max(0, Math.min(100, newReputation));
 
-          let dailyInterest = (prevState.debt || 0) * 0.02;
-          let mechanicSalaries = (prevState.mechanics || 0) * 1000;
-          let dividendCost = (prevState.sharesIssued || 0) * newSharePrice * 0.05;
-          
-          let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries + dividendCost;
-          if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
+              let dailyProfit = 0;
+              let maintenanceFines = 0;
+              const conditionDecay = Math.max(0.2, 1.0 - ((prevState.mechanics || 0) * 0.1));
 
-          return {
-            ...prevState,
-            day: prevState.day + 1,
-            reputation: newReputation,
-            marketingActive: newMarketing,
-            competitors: newCompetitors,
-            ownedPlanes: updatedPlanes,
-            money: Math.max(0, prevState.money + dailyProfit - operatingCosts - maintenanceFines),
-            activeEvent: newEvent,
-            eventDaysLeft: newEventDays,
-            history: [...prevState.history, {
-              day: `Day ${prevState.day}`,
-              balance: prevState.money
-            }].slice(-80)
-          };
+              const updatedPlanes = prevState.ownedPlanes.map(plane => {
+                if (!plane.assignedRoute) return plane;
+
+                let currentCondition = plane.condition;
+                const isAce = plane.pilot === 'Ace';
+
+                const route = updatedDestinations.find(d => d.id === plane.assignedRoute);
+
+                // Weather & Pilot Damage Mechanics
+                if (!isAce && Math.random() < 0.05) currentCondition -= 10; // Rookie mistake
+                if (route?.weather === 'Storm') currentCondition -= 5; // Hail damage
+
+                const newCondition = currentCondition - conditionDecay;
+                if (newCondition <= 0) {
+                  maintenanceFines += 10000000;
+                  return { ...plane, condition: 0, assignedRoute: null};
+                }
+
+                let revenue = route ? route.baseRevenue : 0;
+                if (newEvent && newEvent.type === "revenue") revenue *= newEvent.multiplier;
+
+                // Weather Revenue Penalties
+                if (route?.weather === 'Storm') revenue *= 0.2; // 80% drop in ticket sales
+                if (route?.weather === 'Snow') revenue *= 0.5;  // 50% drop in ticket sales
+
+                if (prevState.research?.aerodynamics) revenue *= 1.2;
+                if (prevState.research?.luxuryCabins) revenue *= 1.3;
+
+                const rivalIndex = newCompetitors.findIndex(c => c.routeId === plane.assignedRoute);
+                if (rivalIndex !== -1) {
+                   revenue *= 0.6;
+                   if (prevState.ticketPrice <= 0.8) {
+                      newCompetitors[rivalIndex].health -= 5;
+                   }
+                }
+
+                revenue = revenue * prevState.ticketPrice * (newReputation / 100);
+                if (isAce) revenue *= 1.2;
+
+                dailyProfit += revenue;
+                return { ...plane, condition: newCondition };
+              });
+
+              newCompetitors = newCompetitors.filter(c => c.health > 0);
+
+              let newSharePrice = prevState.sharePrice || 100;
+              if (newReputation > 90) newSharePrice *= 1.02;
+              else if (newReputation < 50) newSharePrice *= 0.95;
+              newSharePrice = Math.max(10, newSharePrice);
+
+              let dailyInterest = (prevState.debt || 0) * 0.02;
+              let mechanicSalaries = (prevState.mechanics || 0) * 1000;
+              let dividendCost = (prevState.sharesIssued || 0) * newSharePrice * 0.05;
+
+              let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries + dividendCost;
+              if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
+              if (prevState.research?.fuelEfficiency) operatingCosts *= 0.7;
+
+              return {
+                ...prevState,
+                day: prevState.day + 1,
+                reputation: newReputation,
+                marketingActive: newMarketing,
+                competitors: newCompetitors,
+                destinations: updatedDestinations,
+                ownedPlanes: updatedPlanes,
+                sharePrice: newSharePrice,
+                money: Math.max(0, prevState.money + dailyProfit - operatingCosts - maintenanceFines),
+                activeEvent: newEvent,
+                eventDaysLeft: newEventDays,
+                history: [...prevState.history, {
+                  day: `Day ${prevState.day}`,
+                  balance: prevState.money
+                }].slice(-80)
+              };
         });
       }, gameState.gameSpeed);
     }
@@ -634,6 +654,10 @@ function App() {
                     <div>
                       <h3 className="font-semibold text-lg flex items-center gap-2">
                         {dest.name}
+                        {dest.weather === 'Storm' && <span className="text-xl" title="Storm">⛈️</span>}
+                        {dest.weather === 'Snow' && <span className="text-xl" title="Snow">❄️</span>}
+                        {dest.weather === 'Clear' && <span className="text-xl" title="Clear Skies">☀️</span>}
+                        
                         {dest.isUnlocked ? (
                           <span className="text-xs bg-success/20 text-success px-2 py-1 rounded">Unlocked</span>
                         ) : (
@@ -648,6 +672,10 @@ function App() {
                           ? `Generating: $${dest.baseRevenue}/day per plane | Active Planes: ${activePlanes}`
                           : `Unlock Cost: $${(dest.cost / 1000000).toFixed(1)}M`}
                       </p>
+                      
+                      {dest.weather === 'Storm' && <span className="block text-xs text-danger font-bold mt-1">Severe Storm: -80% Revenue & High Plane Damage!</span>}
+                      {dest.weather === 'Snow' && <span className="block text-xs text-warning font-bold mt-1">Snow: -50% Revenue</span>}
+                      
                       {rival && (
                          <p className="text-xs text-danger font-bold mt-1">
                            Rival stealing 40% revenue! Drop Ticket Price to 0.8x to fight!
