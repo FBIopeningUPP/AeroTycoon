@@ -16,6 +16,13 @@ function App() {
       money: 15000000,
       debt: 0,
       marketingActive: 0,
+      sharesIssued: 0,
+      sharePrice: 100,
+      research: {
+        aerodynamics: false,
+        fuelEfficiency: false,
+        luxuryCabins: false
+      },
       mechanics: 0,
       competitors: [],
       reputation: 85,
@@ -69,7 +76,6 @@ function App() {
           let newMarketing = Math.max(0, (prevState.marketingActive || 0) - 1);
           let newCompetitors = [...(prevState.competitors || [])];
 
-          // 2% chance per day a rival airline invades an unlocked route
           if (Math.random() < 0.02) {
             const unlockedRoutes = prevState.destinations.filter(d => d.isUnlocked && d.id !== 'd1');
             if (unlockedRoutes.length > 0) {
@@ -109,12 +115,14 @@ function App() {
             let revenue = route ? route.baseRevenue : 0;
             if (newEvent && newEvent.type === "revenue") revenue *= newEvent.multiplier;
 
-            // Check if a competitor is stealing revenue
+            if (prevState.research?.aerodynamics) revenue *= 1.2;
+            if (prevState.research?.luxuryCabins) revenue *= 1.3;
+
             const rivalIndex = newCompetitors.findIndex(c => c.routeId === plane.assignedRoute);
             if (rivalIndex !== -1) {
-               revenue *= 0.6; // Rival steals 40% of the market!
+               revenue *= 0.6; 
                if (prevState.ticketPrice <= 0.8) {
-                  newCompetitors[rivalIndex].health -= 5; // Price war! Damage them!
+                  newCompetitors[rivalIndex].health -= 5; 
                }
             }
 
@@ -123,10 +131,18 @@ function App() {
             return { ...plane, condition: newCondition };
           });
 
-          newCompetitors = newCompetitors.filter(c => c.health > 0); // Remove bankrupt rivals
-          let dailyInterest = (prevState.debt || 0) * 0.02;
+          newCompetitors = newCompetitors.filter(c => c.health > 0);
+
+          let newSharePrice = prevState.sharePrice || 100;
+          if (newReputation > 90) newSharePrice *= 1.02;
+          else if (newReputation < 50) newSharePrice *= 0.95;
+          newSharePrice = Math.max(10, newSharePrice);
+
+          let dailyInterest = (prevState.debt || 0) * 0.2;
           let mechanicSalaries = (prevState.mechanics || 0) * 1000;
-          let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries;
+          let dividendCost = (prevState.sharesIssued || 0) * newSharePrice * 0.05;
+          
+          let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries + dividendCost;
           if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
 
           return {
@@ -272,6 +288,30 @@ function App() {
     } else {
       alert("Not enough funds to hire a Mechanic ($50k)!");
     }
+  };
+
+  const buyResearch = (tech, cost) => {
+    if(gameState.money >= cost && !gameState.research?.[tech]) {
+      setGameState(prev => ({
+        ...prev,
+        money: prev.money - cost,
+        reasearch: { ...(prev.research || {}), [tech]: true }
+      }));
+    } else {
+      alert("not enough fund or already reaseached")
+    }
+  };
+
+  const issueShares = () => {
+    if ((gameState.sharesIssued || 0) >= 1000) {
+      alert("the sec wont allow you to issue more")
+      return;
+    }
+    setGameState(prev => ({
+      ...prev,
+      sharesIssued: (prev.sharesIssued || 0) + 100,
+      money: prev.money + (100 * (prev.sharePrice || 100))
+    }));
   };
 
   const saveGame = () => {
@@ -658,19 +698,55 @@ function App() {
           </Card>
         )}
         {activeTab === 'settings' && (
-          <Card isBlurred className="flex-1 p-8 bg-background/40 border-none shadow-lg flex flex-col justify-center items-center">
-            <h2 className="text-3xl font-bold mb-2">System Controls</h2>
-            <p className="text-default-500 mb-12">Manage your save data and game settings.</p>
+          <Card isBlurred className="flex-1 p-8 bg-background/40 border-none shadow-lg overflow-y-auto">
+            <h2 className="text-3xl font-bold mb-2">Research & developemtnt</h2>
+            <p className="text-default-500 mb-8">Invest in permanent corp ugrade</p>
 
-            <div className="flex flex-col gap-6 w-full max-w-md">
-              <Button size="lg" color="primary" variant="shadow" onPress={saveGame}>
-                Save Game To Browser
+            <div className="grid grid-cols-3 gap-6 w-full mb-12">
+              <Card className="p-4 bg-primary/10 border border-primary/20">
+                <h3 className="font-bold text-lg mb-1">Aerodynamics</h3>
+                <p className="text-xs text-default-400 mb-4">Planes fly faster. +20% Daily Revenue.</p>
+                {gameState.research?.aerodynamics ? (
+                  <Button color="success" variant="flat" fullWidth isDisabled>Researched</Button>
+                ) : (
+                  <Button color="primary" variant="shadow" fullWidth onPress={() => buyResearch('aerodynamics', 25000000)}>Research ($25M)</Button>
+                )}
+              </Card>
+
+              <Card className="p-4 bg-primary/10 border border-primary/20">
+                <h3 className="font-bold text-lg mb-1">Fuel Efficiency</h3>
+                <p className="text-xs text-default-400 mb-4">New engines. -30% Total Operating Costs.</p>
+                {gameState.research?.fuelEfficiency ? (
+                  <Button color="success" variant="flat" fullWidth isDisabled>Researched</Button>
+                ) : (
+                  <Button color="primary" variant="shadow" fullWidth onPress={() => buyResearch('fuelEfficiency', 40000000)}>Research ($40M)</Button>
+                )}
+              </Card>
+
+              <Card className="p-4 bg-primary/10 border border-primary/20">
+                <h3 className="font-bold text-lg mb-1">Luxury Cabins</h3>
+                <p className="text-xs text-default-400 mb-4">Premium seating. +30% Base Ticket Revenue.</p>
+                {gameState.research?.luxuryCabins ? (
+                  <Button color="success" variant="flat" fullWidth isDisabled>Researched</Button>
+                ) : (
+                  <Button color="primary" variant="shadow" fullWidth onPress={() => buyResearch('luxuryCabins', 60000000)}>Research ($60M)</Button>
+                )}
+              </Card>
+            </div>
+
+            <Divider className="my-8" />
+
+            <h2 className="text-2xl font-bold mb-2">System Controls</h2>
+            <p className="text-default-500 mb-6">Manage your save data and game settings.</p>
+
+            <div className="flex gap-4 w-full max-w-2xl">
+              <Button size="lg" color="primary" variant="shadow" onPress={saveGame} className="flex-1">
+                Save Game to Browser
               </Button>
-              <Button size="lg" color="success" variant="flat" onPress={loadGame}>
+              <Button size="lg" color="primary" variant="shadow" onPress={loadGame} className="flex-1">
                 Load Save Game
               </Button>
-              <Divider className="my-4" />
-              <Button size="lg" color="danger" variant="ghost" onPress={resetGame}>
+              <Button size="lg" color="primary" variant="shadow" onPress={resetGame} className="flex-1">
                 Hard Reset
               </Button>
             </div>
