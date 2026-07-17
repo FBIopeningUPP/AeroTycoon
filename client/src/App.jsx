@@ -4,6 +4,8 @@ import { Plane, Map, Settings, Play, Pause, FastForward, BarChart3, BadgeAlert }
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, matchByIndex } from 'recharts';
 import Globe from 'react-globe.gl';
 import { hsla } from 'framer-motion';
+import ServicesTab from './ServicesTab';
+import { Coffee } from 'lucide-react';
 
 function App() {
   const [gameState, setGameState] = useState(() => {
@@ -143,6 +145,11 @@ function App() {
                 if (prevState.research?.aerodynamics) revenue *= 1.2;
                 if (prevState.research?.luxuryCabins) revenue *= 1.3;
 
+                // Services Revenue Modifiers
+                if (prevState.services?.wifi) revenue *= 1.1;
+                if (prevState.services?.drinks) revenue *= 1.25;
+                if (prevState.services?.food && newReputation < 95) newReputation += 0.5; // Food boosts rep!
+
                 const rivalIndex = newCompetitors.findIndex(c => c.routeId === plane.assignedRoute);
                 if (rivalIndex !== -1) {
                    revenue *= 0.6;
@@ -169,7 +176,12 @@ function App() {
               let mechanicSalaries = (prevState.mechanics || 0) * 1000;
               let dividendCost = (prevState.sharesIssued || 0) * newSharePrice * 0.05;
 
-              let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries + dividendCost;
+              let serviceCosts = 0;
+              if (prevState.services?.wifi) serviceCosts += (prevState.ownedPlanes.length * 500);
+              if (prevState.services?.food) serviceCosts += (prevState.ownedPlanes.length * 1000);
+              if (prevState.services?.drinks) serviceCosts += (prevState.ownedPlanes.length * 2500);
+
+              let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries + dividendCost + serviceCosts;
               if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
               if (prevState.research?.fuelEfficiency) operatingCosts *= 0.7;
 
@@ -432,6 +444,12 @@ function App() {
             isActive={activeTab === 'finances'}
             onPress={() => setActiveTab('finances')}
           />
+          <NavButton
+            icon={<Coffee size={18} />}
+            label="Services"
+            isActive={activeTab === 'services'}
+            onPress={() => setActiveTab('services')}
+          />        
         </div>
 
         <Divider className="my-6 bg-default-100" />
@@ -847,6 +865,9 @@ function App() {
               </Button>
             </div>
           </Card>
+        )}
+        {activeTab === 'services' && (
+          <ServicesTab gameState={gameState} setGameState={setGameState} />
         )}
         {gameState.money < 0 && (
           <div className="fixed inset-0 z-50 bg-danger/90 backdrop-blur-md flex flex-col items-center justify-center text-white">
