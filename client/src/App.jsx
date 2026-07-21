@@ -50,7 +50,39 @@ function App() {
         { id: 'd5', name: 'Dubai', cost: 12000000, isUnlocked: false, baseRevenue: 22000, lat: 25.20, lng: 55.27 },
         { id: 'd6', name: 'Rio de Janeiro', cost: 15000000, isUnlocked: false, baseRevenue: 25000, lat: -22.90, lng: -43.17 },
         { id: 'd7', name: 'Singapore', cost: 18000000, isUnlocked: false, baseRevenue: 28000, lat: 1.35, lng: 103.81 },
-        { id: 'd8', name: 'Sydney', cost: 25000000, isUnlocked: false, baseRevenue: 35000, lat: -33.86, lng: 151.20 }
+        { id: 'd8', name: 'Sydney', cost: 25000000, isUnlocked: false, baseRevenue: 35000, lat: -33.86, lng: 151.20 },
+        { id: 'd9', name: 'Los Angeles', cost: 1000000, isUnlocked: false, baseRevenue: 4000, lat: 34.05, lng: -118.24 },
+        { id: 'd10', name: 'Chicago', cost: 1500000, isUnlocked: false, baseRevenue: 5000, lat: 41.87, lng: -87.62 },
+        { id: 'd11', name: 'Toronto', cost: 2000000, isUnlocked: false, baseRevenue: 6000, lat: 43.65, lng: -79.38 },
+        { id: 'd12', name: 'Mexico City', cost: 3500000, isUnlocked: false, baseRevenue: 7000, lat: 19.43, lng: -99.13 },
+        { id: 'd13', name: 'Frankfurt', cost: 6000000, isUnlocked: false, baseRevenue: 12000, lat: 50.11, lng: 8.68 },
+        { id: 'd14', name: 'Amsterdam', cost: 7000000, isUnlocked: false, baseRevenue: 13000, lat: 52.36, lng: 4.90 },
+        { id: 'd15', name: 'Madrid', cost: 7500000, isUnlocked: false, baseRevenue: 14000, lat: 40.41, lng: -3.70 },
+        { id: 'd16', name: 'Rome', cost: 9000000, isUnlocked: false, baseRevenue: 16000, lat: 41.90, lng: 12.49 },
+        { id: 'd17', name: 'Istanbul', cost: 10000000, isUnlocked: false, baseRevenue: 18000, lat: 41.00, lng: 28.97 },
+        { id: 'd18', name: 'Mumbai', cost: 13000000, isUnlocked: false, baseRevenue: 23000, lat: 19.07, lng: 72.87 },
+        { id: 'd19', name: 'Delhi', cost: 14000000, isUnlocked: false, baseRevenue: 24000, lat: 28.61, lng: 77.20 },
+        { id: 'd20', name: 'Bangkok', cost: 16000000, isUnlocked: false, baseRevenue: 26000, lat: 13.75, lng: 100.50 },
+        { id: 'd21', name: 'Hong Kong', cost: 17000000, isUnlocked: false, baseRevenue: 27000, lat: 22.31, lng: 114.16 },
+        { id: 'd22', name: 'Shanghai', cost: 19000000, isUnlocked: false, baseRevenue: 29000, lat: 31.23, lng: 121.47 },
+        { id: 'd23', name: 'Beijing', cost: 20000000, isUnlocked: false, baseRevenue: 30000, lat: 39.90, lng: 116.40 },
+        { id: 'd24', name: 'Seoul', cost: 21000000, isUnlocked: false, baseRevenue: 31000, lat: 37.56, lng: 126.97 },
+        { id: 'd25', name: 'Kuala Lumpur', cost: 22000000, isUnlocked: false, baseRevenue: 32000, lat: 3.13, lng: 101.68 },
+        { id: 'd26', name: 'Jakarta', cost: 23000000, isUnlocked: false, baseRevenue: 33000, lat: -6.20, lng: 106.81 },
+        { id: 'd27', name: 'Melbourne', cost: 26000000, isUnlocked: false, baseRevenue: 36000, lat: -37.81, lng: 144.96 },
+        { id: 'd28', name: 'Auckland', cost: 27000000, isUnlocked: false, baseRevenue: 37000, lat: -36.84, lng: 174.76 },
+        { id: 'd29', name: 'Buenos Aires', cost: 28000000, isUnlocked: false, baseRevenue: 38000, lat: -34.60, lng: -58.38 },
+        { id: 'd30', name: 'Sao Paulo', cost: 29000000, isUnlocked: false, baseRevenue: 39000, lat: -23.55, lng: -46.63 },
+        { id: 'd31', name: 'Johannesburg', cost: 30000000, isUnlocked: false, baseRevenue: 40000, lat: -26.20, lng: 28.04 },
+        { id: 'd32', name: 'Cape Town', cost: 31000000, isUnlocked: false, baseRevenue: 41000, lat: -33.92, lng: 18.42 },
+        { id: 'd33', name: 'Cairo', cost: 32000000, isUnlocked: false, baseRevenue: 42000, lat: 30.04, lng: 31.23 },
+        { id: 'd34', name: 'Nairobi', cost: 33000000, isUnlocked: false, baseRevenue: 43000, lat: -1.29, lng: 36.82 },
+        { id: 'd35', name: 'Lagos', cost: 34000000, isUnlocked: false, baseRevenue: 44000, lat: 6.52, lng: 3.37 },
+        { id: 'd36', name: 'Honolulu', cost: 40000000, isUnlocked: false, baseRevenue: 50000, lat: 21.30, lng: -157.85 },
+        { id: 'd37', name: 'Reykjavik', cost: 45000000, isUnlocked: false, baseRevenue: 55000, lat: 64.14, lng: -21.92 },
+        { id: 'd38', name: 'Macau (High Rollers)', cost: 60000000, isUnlocked: false, baseRevenue: 80000, lat: 22.19, lng: 113.54 },
+        { id: 'd39', name: 'Monaco (Ultra VIP)', cost: 100000000, isUnlocked: false, baseRevenue: 150000, lat: 43.73, lng: 7.42 },
+        { id: 'd40', name: 'Antarctica Research Station', cost: 250000000, isUnlocked: false, baseRevenue: 300000, lat: -82.86, lng: 135.00 }
       ]
     };
   });
@@ -135,7 +167,8 @@ function App() {
                   return { ...plane, condition: 0, assignedRoute: null};
                 }
 
-                let revenue = route ? route.baseRevenue : 0;
+                // Revenue scales with plane capacity! Base revenue assumes a 100-pax plane.
+                let revenue = route ? (route.baseRevenue * (plane.capacity / 100)) : 0;
                 if (newEvent && newEvent.type === "revenue") revenue *= newEvent.multiplier;
 
                 // Weather Revenue Penalties
@@ -185,7 +218,9 @@ function App() {
               if (prevState.services?.food) serviceCosts += (prevState.ownedPlanes.length * 1000);
               if (prevState.services?.drinks) serviceCosts += (prevState.ownedPlanes.length * 2500);
 
-              let operatingCosts = (prevState.ownedPlanes.length * 500) + dailyInterest + mechanicSalaries + dividendCost + serviceCosts;
+              // Operating costs scale with plane capacity! ($50 per passenger seat)
+              const fleetOperatingCosts = prevState.ownedPlanes.reduce((acc, p) => acc + (p.capacity * 50), 0);
+              let operatingCosts = fleetOperatingCosts + dailyInterest + mechanicSalaries + dividendCost + serviceCosts;
               if (newEvent && newEvent.type === "cost") operatingCosts *= newEvent.multiplier;
               if (prevState.research?.fuelEfficiency) operatingCosts *= 0.7;
 
@@ -218,7 +253,21 @@ function App() {
 
   const availablePlanes = [
     { id: 'p1', name: 'Cessna Caravan', price: 2500000, capacity: 14, speed: 340 },
-    { id: 'p2', name: 'Boeing 737 Max', price: 90000000, capacity: 200, speed: 840 }
+    { id: 'p2', name: 'Embraer Phenom 100', price: 4500000, capacity: 6, speed: 720 },
+    { id: 'p3', name: 'ATR 72-600', price: 26000000, capacity: 78, speed: 510 },
+    { id: 'p4', name: 'Bombardier CRJ900', price: 45000000, capacity: 90, speed: 830 },
+    { id: 'p5', name: 'Airbus A220-300', price: 91000000, capacity: 140, speed: 850 },
+    { id: 'p6', name: 'Boeing 737-800', price: 106000000, capacity: 189, speed: 840 },
+    { id: 'p7', name: 'Airbus A320neo', price: 110000000, capacity: 195, speed: 830 },
+    { id: 'p8', name: 'Boeing 757-200 (Used)', price: 65000000, capacity: 220, speed: 850 },
+    { id: 'p9', name: 'Boeing 787-8 Dreamliner', price: 248000000, capacity: 242, speed: 900 },
+    { id: 'p10', name: 'Airbus A330-900neo', price: 296000000, capacity: 287, speed: 880 },
+    { id: 'p11', name: 'Boeing 777-300ER', price: 375000000, capacity: 396, speed: 905 },
+    { id: 'p12', name: 'Airbus A350-1000', price: 366000000, capacity: 410, speed: 903 },
+    { id: 'p13', name: 'Boeing 747-8 Intercontinental', price: 418000000, capacity: 467, speed: 914 },
+    { id: 'p14', name: 'Airbus A380-800', price: 445000000, capacity: 853, speed: 900 },
+    { id: 'p15', name: 'Concorde (Retrofit)', price: 600000000, capacity: 100, speed: 2179 },
+    { id: 'p16', name: 'AeroTycoon Supersonic', price: 800000000, capacity: 200, speed: 3000 }
   ];
 
   const { globeCities, globeRoutes} = useMemo(() => {
