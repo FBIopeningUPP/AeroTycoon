@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, Button } from '@nextui-org/react';
 import { Briefcase, Globe, Wrench } from 'lucide-react';
 

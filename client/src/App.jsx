@@ -1,12 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, Button, Divider, Progress } from '@nextui-org/react';
 import { Plane, Map, Settings, Play, Pause, FastForward, BarChart3, BadgeAlert } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, matchByIndex } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Globe from 'react-globe.gl';
-import { hsla } from 'framer-motion';
 import ServicesTab from './ServicesTab';
 import AcquisitionTab from './AcquisitionsTab';
 import { Coffee, Briefcase } from 'lucide-react';
+
+const possibleEvents = [
+  { title: "📈 Global Tourism Boom! All route revenues increased by 50%.", type: "revenue", multiplier: 1.5, duration: 10 },
+  { title: "🛢️ Oil Crisis! Fuel prices spike, doubling operating costs.", type: "cost", multiplier: 2.0, duration: 8 },
+  { title: "🏆 Airline Award! Excellent service grants temporary bonus income.", type: "revenue", multiplier: 1.2, duration: 5 }
+];
 
 function App() {
   const [gameState, setGameState] = useState(() => {
@@ -49,12 +54,6 @@ function App() {
       ]
     };
   });
-
-  const possibleEvents = [
-    { title: "📈 Global Tourism Boom! All route revenues increased by 50%.", type: "revenue", multiplier: 1.5, duration: 10 },
-    { title: "🛢️ Oil Crisis! Fuel prices spike, doubling operating costs.", type: "cost", multiplier: 2.0, duration: 8 },
-    { title: "🏆 Airline Award! Excellent service grants temporary bonus income.", type: "revenue", multiplier: 1.2, duration: 5 }
-  ];
 
   const [activeTab, setActiveTab] = useState('dashboard');
 

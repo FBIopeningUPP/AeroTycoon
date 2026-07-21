@@ -1,9 +1,8 @@
-import React from 'react';
-import { Card, Button, Divider } from '@nextui-org/react';
+import { Card, Button } from '@nextui-org/react';
 import { Wifi, Utensils, Wine } from 'lucide-react';
 
 export default function ServicesTab({gameState, setGameState }) {
-    const toggleService = (serviceName, dailyCost) => {
+    const toggleService = (serviceName) => {
         const isEnabled = gameState.services?.[serviceName];
 
         setGameState(prev => ({
