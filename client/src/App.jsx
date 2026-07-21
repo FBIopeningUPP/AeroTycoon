@@ -164,6 +164,7 @@ function App() {
 
                 revenue = revenue * prevState.ticketPrice * (newReputation / 100);
                 if (isAce) revenue *= 1.2;
+                if (plane.isVIP) revenue *= 3.0;
 
                 dailyProfit += revenue;
                 return { ...plane, condition: newCondition };
@@ -363,6 +364,23 @@ function App() {
     }
   };
 
+  const toggleVIP = (instanceId) => {
+    setGameState(prev => ({
+      ...prev,
+      ownedPlanes: prev.ownedPlanes.map(p =>
+        p.instanceId === instanceId ? {...p, isVIP: !p.isVIP} : p
+      )
+    }));
+  };
+
+  const buySpaceport = () => {
+    if (gameState.money >= 1000000000) {
+      setGameState(prev => ({ ...prev, money: prev.money - 1000000000, gameWon: true }));
+    } else {
+      alert("You need $1 Billion to fund the Spaceport!");
+    }
+  };
+
   const issueShares = () => {
     if ((gameState.sharesIssued || 0) >= 1000) {
       alert("The SEC won't allow you to issue more than 1000 shares!");
@@ -551,6 +569,12 @@ function App() {
                 <p className="text-xs text-default-400 mb-4">Mechanics slow plane damage. $1k/day salary.</p>
                 <Button color="warning" variant="shadow" fullWidth onPress={hireMechanic}>Hire Mechanic ($50k)</Button>
               </Card>
+
+              <Card className="p-4 bg-background/80 backdrop-blur-md border border-default-200/50 w-64 shadow-lg pointer-events-auto">
+                <h3 className="font-bold text-lg mb-2 flex justify-between">Space Program 🚀</h3>
+                <p className="text-xs text-default-400 mb-4">The ultimate victory condition. Build a spaceport to win!</p>
+                <Button color="primary" variant="shadow" fullWidth onPress={buySpaceport}>Launch ($1B)</Button>
+              </Card>
             </div>
 
             <div className="w-full h-full cursor-move flex items-center justify-center pt-8 z-10 absolute inset-0">
@@ -609,6 +633,9 @@ function App() {
                         <p className="text-xs mt-1">
                           Pilot: {plane.pilot === 'Ace' ? <span className="text-success font-bold">★ Ace Pilot</span> : <span className="text-warning">Rookie (Risk of Damage)</span>}
                         </p>
+                        <p className="text-xs mt-1 font-bold">
+                          {plane.isVIP ? <span className="text-warning">🍾 VIP CONFIG (3X REV)</span> : <span className="text-primary">👥 PASSENGER CONFIG</span>}
+                        </p>
                       </div>
                       <Plane size={24} className={plane.condition <= 20 ? "text-danger animate-pulse" : "text-primary opacity-50"} />
                     </div>
@@ -639,6 +666,14 @@ function App() {
                           Train Ace ($1M)
                         </Button>
                       )}                      
+                      <Button
+                        size="sm"
+                        color="warning"
+                        variant="flat"
+                        onPress={() => toggleVIP(plane.instanceId)}
+                      >
+                        {plane.isVIP ? 'Remove VIP' : 'Make VIP'}
+                      </Button>
                     </div>
                   </Card>
                 ))
@@ -881,6 +916,13 @@ function App() {
         )}
         {activeTab === 'acquisitions' && (
           <AcquisitionTab gameState={gameState} setGameState={setGameState} />
+        )}
+        {gameState.gameWon && (
+          <div className="fixed inset-0 z-50 bg-primary/90 backdrop-blur-md flex flex-col items-center justify-center text-white">
+            <h1 className="text-6xl font-bold mb-4">YOU WON! 🚀</h1>
+            <p className="text-xl mb-8">You funded the world's first commercial Spaceport!</p>
+            <Button size="lg" color="default" variant="shadow" onPress={resetGame}>Play Again</Button>
+          </div>
         )}
         {gameState.money < 0 && (
           <div className="fixed inset-0 z-50 bg-danger/90 backdrop-blur-md flex flex-col items-center justify-center text-white">
